@@ -1,0 +1,10 @@
+This product includes code developed and copyrighted by Beckman
+Coulter, Inc., and Indigo BioAutomation, Inc. It is released under the
+terms of the MIT license.
+
+This product also includes separately licensed:
+
+* Chez Scheme by Cisco Systems, Inc.
+
+* Portable Regular Expressions for Scheme and Common Lisp (pregexp) by
+  Dorai Sitaram
