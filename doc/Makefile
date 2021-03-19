@@ -14,6 +14,7 @@ swish :=\
   erlang.tex\
   json.tex\
   pregexp.tex\
+  cli.tex\
 
 swish-lite.pdf: $(swish)
 

@@ -1,0 +1,15 @@
+#!/bin/bash
+set -euo pipefail
+cd "$(dirname "$0")"
+
+function run_suite {
+  echo $1
+  scheme -q $1 <<EOF
+(reset-handler abort)
+(run-mats)
+EOF
+}
+
+for f in swish/*.ms
+do run_suite $f
+done
