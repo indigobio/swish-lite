@@ -1,0 +1,142 @@
+% Copyright 2018 Beckman Coulter, Inc.
+%
+% Permission is hereby granted, free of charge, to any person
+% obtaining a copy of this software and associated documentation files
+% (the "Software"), to deal in the Software without restriction,
+% including without limitation the rights to use, copy, modify, merge,
+% publish, distribute, sublicense, and/or sell copies of the Software,
+% and to permit persons to whom the Software is furnished to do so,
+% subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be
+% included in all copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+% EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+% MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+% NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+% BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+% ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+% CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+% SOFTWARE.
+
+\lstdefinelanguage{json}{
+  basicstyle=\upshape\mdseries\frenchspacing\ttfamily,
+  columns=flexible,
+  string=[s]{"}{"},
+  stringstyle=\color{blue},
+  comment=[l]{:},
+  commentstyle=\color{black},
+  escapeinside={|}{|},
+  frame=single
+}
+
+\chapter {HTML Interface}\label{chap:http}
+
+\section {Introduction}
+
+The programming interface includes procedures for the HyperText Markup
+Language (HTML) version 5~\cite{html5}.
+
+\section {Programming Interface}
+
+\defineentry{html:encode}
+\begin{procedure}
+  \code{(html:encode \var{s})} \\
+  \code{(html:encode \var{op} \var{s})}\strut
+\end{procedure}
+\returns{} see below
+
+The \code{html:encode} procedure converts special character entities
+in string \var{s}.
+
+\begin{tabular}{ll}
+  input & output \\ \hline
+  \code{"} & \code{\&quot;} \\
+  \code{\&} & \code{\&amp;} \\
+  \code{\textless} & \code{\&lt;} \\
+  \code{\textgreater} & \code{\&gt;} \\
+  \hline
+\end{tabular}
+
+The single argument form of \code{html:encode} returns an encoded
+string.
+
+The two argument form of \code{html:encode} sends the encoded string
+to the textual output port \var{op}.
+
+\defineentry{html->string}
+\begin{procedure}
+  \code{(html->string \var{x})} \\
+  \code{(html->string \var{op} \var{x})}\strut
+\end{procedure}
+\returns{} see below
+
+The \code{html->string} procedure transforms an object into
+HTML. The transformation, $H$, is described below:
+
+\begin{tabular}{ll}
+  \var{x} & $H(\var{x})$\\ \hline
+
+  \code{()} & nothing\\
+  \code{\#!void} & nothing\\
+  \code{\var{string}} & $E(\var{string})$\\
+  \code{\var{number}} & \var{number}\\
+  \code{(begin \var{pattern} \ldots)} & $H(\var{pattern})$\ldots\\
+  \code{(cdata \var{string} \ldots)} &
+  \code{[!CDATA[\var{string}$\ldots$]]}\\
+  \code{(html5 \opt{(@ \var{attr} \ldots)} \var{pattern} \ldots)} &
+  \code{<!DOCTYPE html><html $A(\var{attr})$ $\ldots$>$H(\var{pattern})\ldots$</html>}\\
+  \code{(raw \var{string} \ldots)} & \var{string}$\ldots$\\
+  \code{(script \opt{(@ \var{attr} \ldots)} \var{string} \ldots)} &
+  \code{<script $A(\var{attr})$ $\ldots$>\var{string}$\ldots$</script>}\\
+  \code{(style \opt{(@ \var{attr} \ldots)} \var{string} \ldots)} &
+  \code{<style $A(\var{attr})$ $\ldots$>\var{string}$\ldots$</style>}\\
+  \code{(\var{tag} \opt{(@ \var{attr} \ldots)} \var{pattern} \ldots)} &
+  \code{<\var{tag} $A(\var{attr})$ $\ldots$>$H(\var{pattern})\ldots$</\var{tag}>}\\
+  \code{(\var{void-tag} \opt{(@ \var{attr} \ldots)})} &
+  \code{<\var{void-tag} $A(\var{attr})$ $\ldots$>}\\
+
+  \hline
+\end{tabular}
+
+$E$ denotes the \code{html:encode} function.
+
+A \var{void-tag} is one of \code{area}, \code{base}, \code{br},
+\code{col}, \code{embed}, \code{hr}, \code{img},
+\code{input}, \code{keygen}, \code{link}, \code{menuitem},
+\code{meta}, \code{param}, \code{source}, \code{track}, or
+\code{wbr}. A \var{tag} is any other symbol.
+
+The attribute transformation, $A$, is described below, where \var{key}
+is a symbol:
+
+\begin{tabular}{ll}
+  \var{attr} & $A(\var{attr})$\\ \hline
+
+  \code{\#!void} & nothing\\
+  \code{(\var{key})} & \var{key}\\
+  \code{(\var{key} \var{string})} & \code{\var{key}="$E(\var{string})$"}\\
+  \code{(\var{key} \var{number})} & \code{\var{key}="\var{number}"}\\
+
+  \hline
+\end{tabular}
+
+The single argument form of \code{html->string} returns an encoded
+HTML string.
+
+The two argument form of \code{html->string} sends the encoded HTML
+string to the textual output port \var{op}.
+
+Input that does not match the specification causes a
+\code{\#(bad-arg html->string \var{x})} exception to be raised.
+
+\defineentry{html->bytevector}
+\begin{procedure}
+  \code{(html->bytevector \var{x})}
+\end{procedure}
+\returns{} a bytevector
+
+The \code{html->bytevector} procedure calls \code{html->string} on
+\var{x} using a bytevector output port transcoded using
+\code{(make-utf8-transcoder)} and returns the resulting bytevector.

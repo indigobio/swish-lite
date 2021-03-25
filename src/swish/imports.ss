@@ -27,6 +27,7 @@
    (import
     (swish erlang)
     (swish errors)
+    (swish html)
     (swish io)
     (swish json)
     (swish meta)
