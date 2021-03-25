@@ -33,11 +33,13 @@
    limit-stack?
    make-fault
    make-fault/no-cc
+   make-process-parameter
    match
    match-define
    match-let*
    on-exit
    profile-me
+   reset-process-parameters!
    throw
    try
    walk-stack
@@ -728,6 +730,35 @@
          (with-temporaries (tmp)
            #`((sub-match #,v `(exit-reason #f r e))))])))
 
+  (define process-parameter-ht (make-weak-eq-hashtable))
+
+  (define make-process-parameter
+    (case-lambda
+     [(initial filter)
+      (unless (procedure? filter)
+        (bad-arg 'make-process-parameter filter))
+      (let ([initial (filter initial)])
+        (define v initial)
+        (define parameter
+          (case-lambda
+           [() v]
+           [(x) (set! v (filter x))]))
+        (define (reset!) (set! v initial))
+        (eq-hashtable-set! process-parameter-ht parameter reset!)
+        parameter)]
+     [(initial)
+      (define v initial)
+      (define parameter
+        (case-lambda
+         [() v]
+         [(x) (set! v x)]))
+      (define (reset!) (set! v initial))
+      (eq-hashtable-set! process-parameter-ht parameter reset!)
+      parameter]))
+
+  (define (reset-process-parameters!)
+    (vector-for-each (lambda (reset!) (reset!))
+      (hashtable-values process-parameter-ht)))
 
   (record-writer (csv7:record-type-descriptor
                   (condition (make-error) (make-warning)))

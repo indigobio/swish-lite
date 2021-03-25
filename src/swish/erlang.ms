@@ -79,7 +79,9 @@
 (mat bad-args ()
   (match-let*
    ([#(EXIT #(bad-arg walk-stack-max-depth -1))
-     (catch (walk-stack-max-depth -1))])
+     (catch (walk-stack-max-depth -1))]
+    [#(EXIT #(bad-arg make-process-parameter 12))
+     (catch (make-process-parameter 0 12))])
    'ok))
 
 (mat t1 ()
@@ -2269,3 +2271,29 @@
     ["#<fault ball>" (format "~s" c)])
    'ok)
   )
+
+(mat process-parameter ()
+  (define g (make-guardian))
+  (define (salvaged)
+    (let ([x (g)])
+      (if x (cons x (salvaged)) '())))
+  (define drop-param (make-process-parameter 0 1+))
+  (define keep-param (make-process-parameter 10 1+))
+  (match-let*
+   ([1 (drop-param)]
+    [11 (keep-param)]
+    [,_ (drop-param 1)]
+    [,_ (keep-param 11)]
+    [2 (drop-param)]
+    [12 (keep-param)]
+    [,_ (g drop-param)]
+    [,_ (g keep-param)]
+    [,_ (reset-process-parameters!)]
+    [1 (drop-param)]
+    [11 (keep-param)]
+    [,_ (set! drop-param #f)]
+    [,_ (gc)]
+    [(,p) (salvaged)]
+    [1 (p)]
+    [11 (keep-param)])
+   'ok))

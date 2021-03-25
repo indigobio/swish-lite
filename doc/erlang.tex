@@ -589,6 +589,32 @@ and returns a list of continuations recorded in \var{x}.
 The continuations are listed innermost to outermost.
 
 % -------------------------------------------------------------------------
+\defineentry{make-process-parameter}
+\begin{procedure}
+  \code{(make-process-parameter \var{initial} \opt{\var{filter}})}
+\end{procedure}
+\returns{} a parameter procedure
+
+The \code{make-process-parameter} procedure creates a parameter
+procedure $p$ that provides mutable storage. Calling $p$ with no
+arguments returns the current value of the parameter, and calling $p$
+with one argument sets the value of the parameter. The \var{filter},
+if present, is a procedure of one argument that is applied to the
+\var{initial} and all subsequent values. If \var{filter} is not a
+procedure, exception \code{\#(bad-arg make-process-parameter
+  \var{filter})} is raised.
+
+% -------------------------------------------------------------------------
+\defineentry{reset-process-parameters!}
+\begin{procedure}
+  \code{(reset-process-parameters!)}
+\end{procedure}
+\returns{} unspecified
+
+The \code{reset-process-parameters!} procedure resets all process
+parameters to their initial values.
+
+% -------------------------------------------------------------------------
 \defineentry{on-exit}
 \begin{syntax}
   \code{(on-exit \var{finally} \var{b1} \var{b2} \etc{})}
