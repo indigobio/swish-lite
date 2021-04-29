@@ -536,22 +536,6 @@
              #,(match-help lookup
                  #'(v pattern fail (begin)) #f))])))
 
-  (meta define (valid-fields? x f* known-fields forbidden)
-    (let valid? ([f* f*] [seen '()])
-      (syntax-case f* ()
-        [(fn . rest)
-         (identifier? #'fn)
-         (let ([f (datum fn)])
-           (when (memq f seen)
-             (syntax-violation #f "duplicate field" x #'fn))
-           (when (memq f forbidden)
-             (syntax-violation #f "invalid field" x #'fn))
-           (unless (or (not known-fields) (memq f known-fields))
-             (syntax-violation #f "unknown field" x #'fn))
-           (valid? #'rest (cons f seen)))]
-        [() #t]
-        [_ #f])))
-
   (meta define (generate-name prefix fn)
     (if (not prefix) fn (compound-id fn prefix fn)))
 
@@ -653,12 +637,17 @@
                [(name open expr field-names)
                 (eq? (datum open) 'open)
                 (handle-open x #'expr #f #'field-names)]
-               [(name is? e)
+               [(name is? . args)
                 (eq? (datum is?) 'is?)
-                #'(let ([x e])
-                    (and (vector? x)
-                         (#3%fx= (#3%vector-length x) (length '(name field ...)))
-                         (eq? (#3%vector-ref x 0) 'name)))]
+                (let ([is?
+                       #'(lambda (x)
+                           (and (vector? x)
+                                (#3%fx= (#3%vector-length x) (length '(name field ...)))
+                                (eq? (#3%vector-ref x 0) 'name)))])
+                  (syntax-case #'args ()
+                    [() is?]
+                    [(e) #`(#,is? e)]
+                    [else (syntax-case x ())]))]
                [(name fn e)
                 (syntax-datum-eq? #'fn #'field)
                 (with-syntax ([getter (replace-source x #'(name fn))])
