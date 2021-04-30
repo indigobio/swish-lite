@@ -176,6 +176,15 @@ is an instance of tuple type \var{name}
 
 The \code{(\var{name} is?)} form expands to \code{(lambda (x) (\var{name} is? x))}.
 
+\index{tuple!field-index@\code{field-index}}
+\begin{syntax}
+  \code{(\var{name} field-index \var{field})}
+\end{syntax}
+\expandsto{} an integer \var{n}, such that \code{(vector-ref \var{instance} \var{n})}
+returns \var{instance}.\var{field}
+
+Avoid using this form when possible, as it leaks implementation details.
+
 % ----------------------------------------------------------------------------
 \subsection {Pattern Matching}
 

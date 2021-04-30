@@ -227,6 +227,11 @@
      (<point> open p [51 mustang])
      p)
    "invalid field")
+  (assert-syntax-error
+   (let ()
+     (define-tuple <point> x y)
+     (<point> field-index z))
+   "unknown field")
   )
 
 (mat t9 ()
@@ -509,6 +514,15 @@
          (let ([x 'bound-x] [y 'bound-y])
            (<point> open p p. (x y))
            (list x y p.x p.y)))))))
+  (assert
+   (equal?
+    '(5 4)
+    (let ()
+      (define-tuple <point> x y)
+      (let ([p (<point> make [x 5] [y 4])])
+        (list
+         (vector-ref p (<point> field-index x))
+         (vector-ref p (<point> field-index y)))))))
   (assert-error bad-tuple
     (let ()
       (define-tuple <box> content)

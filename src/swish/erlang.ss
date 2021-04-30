@@ -648,6 +648,14 @@
                     [() is?]
                     [(e) #`(#,is? e)]
                     [else (syntax-case x ())]))]
+               [(name field-index fn)
+                (and (eq? (datum field-index) 'field-index)
+                     (syntax-datum-eq? #'fn #'field))
+                (datum->syntax #'* (find-index #'fn #'(field ...) 1))]
+               ...
+               [(name field-index fn)
+                (eq? (datum field-index) 'field-index)
+                (syntax-violation #f "unknown field" x #'fn)]
                [(name fn e)
                 (syntax-datum-eq? #'fn #'field)
                 (with-syntax ([getter (replace-source x #'(name fn))])
