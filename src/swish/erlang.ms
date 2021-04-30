@@ -131,12 +131,17 @@
        (lambda () (eval (read (open-input-string "(match 3 [#[foo] 4])"))))
        (lambda () (record-reader 'foo orig))))
    "invalid match pattern #[foo]")
-  (assert-syntax-error (define-tuple <point> (x y)) "invalid syntax")
+  (assert-syntax-error (define-tuple <point> (x y)) "invalid field")
   (assert-syntax-error (define-tuple <point> make) "invalid field")
   (assert-syntax-error (define-tuple <point> copy) "invalid field")
   (assert-syntax-error (define-tuple <point> copy*) "invalid field")
   (assert-syntax-error (define-tuple <point> is?) "invalid field")
   (assert-syntax-error (define-tuple <point> x x) "duplicate field")
+  (assert-syntax-error
+   (let ()
+     (define-tuple <point> x y)
+     (<point> is? "sharp" "end"))
+   "invalid syntax")
   (assert-syntax-error
    (let ()
      (define-tuple <point> x y)
@@ -221,7 +226,7 @@
      (define-tuple <point> x y)
      (<point> open p [51 mustang])
      p)
-   "invalid syntax")
+   "invalid field")
   )
 
 (mat t9 ()
@@ -477,13 +482,13 @@
       (define-tuple <box> content)
       (<box> copy* 27)))
                                         ; is?
-  (assert
-   (equal?
-    '(#t #f #f #f #f #f #f #f #f #f #f)
-    (let ()
-      (define-tuple <point> x y)
-      (map (lambda (p) (<point> is? p))
-        (list (<point> make [x 1] [y 2]) #f #t 27 #\a "point" 'point '(point) '#(<point>) '#(<point> 1) '#(<point> 1 2 3))))))
+  (let ()
+    (define-tuple <point> x y)
+    (define expected '(#t #f #f #f #f #f #f #f #f #f #f))
+    (define inputs
+      (list (<point> make [x 1] [y 2]) #f #t 27 #\a "point" 'point '(point) '#(<point>) '#(<point> 1) '#(<point> 1 2 3)))
+    (assert (equal? expected (map (lambda (p) (<point> is? p)) inputs)))
+    (assert (equal? expected (map (<point> is?) inputs))))
                                         ; open
   (assert
    (equal?
@@ -540,6 +545,19 @@
 (mat native-record ()
   (with-cp0-disabled
    ;; define-record-type
+   (assert-syntax-error
+    (let ()
+      ;; match needs the rtd at expand time, but define-record-type does not
+      ;; construct the rtd at expand time because the record type is generative,
+      ;; i.e., it lacks the (nongenerative) clause; for details, see
+      ;; Chez Scheme's s/syntax.ss.
+      (define-record-type foo (fields a))
+      (match 123 [`(foo) #f]))
+    "unknown type foo in `(foo)")
+   (let ()
+     ;; define-record-type creates rtd at expand time; match finds it
+     (define-record-type foo (nongenerative) (fields a))
+     (match (make-foo 1) [`(foo) #t]))
    (let ()
      (define-record-type foo
        (nongenerative)

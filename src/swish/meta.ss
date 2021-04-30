@@ -25,8 +25,8 @@
   (export
    add-if-absent
    collect-clauses
+   combine-adjacent
    compound-id
-   define-options
    find-clause
    find-source
    get-clause
@@ -39,6 +39,7 @@
    scdr
    snull?
    syntax-datum-eq?
+   valid-fields?
    windows?
    with-temporaries
    )
@@ -227,28 +228,38 @@
                   (pretty (syntax->datum form) os))
                 (get-output-string os))))))))]))
 
-  (define-syntax (make-options x)
-    (syntax-case x ()
-      [(_ [param-expr val-expr] ...)
-       (with-syntax ([(param ...) (generate-temporaries #'(param-expr ...))]
-                     [(val ...) (generate-temporaries #'(val-expr ...))])
-         #'(let ([param param-expr] ... [val val-expr] ...)
-             (lambda () (param val) ... (void))))]))
+  (define (valid-fields? x f* known-fields forbidden)
+    (let valid? ([f* f*] [seen '()])
+      (syntax-case f* ()
+        [(fn . rest)
+         (let ([f (datum fn)])
+           (when (or (not (identifier? #'fn)) (memq f forbidden))
+             (syntax-violation #f "invalid field" x #'fn))
+           (when (memq f seen)
+             (syntax-violation #f "duplicate field" x #'fn))
+           (unless (or (not known-fields) (memq f known-fields))
+             (syntax-violation #f "unknown field" x #'fn))
+           (valid? #'rest (cons f seen)))]
+        [() #t]
+        [_ #f])))
 
-  (define-syntax (define-options x)
-    (syntax-case x ()
-      [(_ name option ...)
-       #`(define-syntax name
-           (let ()
-             (define (expose k)
-               (case k [(option) #'option] ...))
-             (lambda (x)
-               (syntax-case x ()
-                 [(_ [opt val] (... ...))
-                  (begin
-                    (collect-clauses x #'([opt val] (... ...))
-                      (datum (option ...)))
-                    (with-syntax ([(actual-opt (... ...))
-                                   (map expose (datum (opt (... ...))))])
-                      #'(make-options (actual-opt val) (... ...))))]))))]))
+  ;; combine adjacent self-evaluating literals
+  (define (combine-adjacent pred? combine exprs)
+    (define (get-literal expr)
+      (if (identifier? expr)
+          (values #f #f)
+          (let ([datum (syntax->datum expr)])
+            (values (pred? datum) datum))))
+    (fold-right
+     (lambda (expr exprs)
+       (let-values ([(combine-first? first) (get-literal expr)])
+         (if (null? exprs)
+             (list (if combine-first? first expr))
+             (let-values ([(combine-second? second) (get-literal (car exprs))])
+               (if (and combine-first? combine-second?)
+                   (cons (combine first second) (cdr exprs))
+                   (cons expr exprs))))))
+     '()
+     (syntax->list exprs)))
+
   )
