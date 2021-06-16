@@ -1,0 +1,28 @@
+name: run-mats
+on: [push]
+jobs:
+  mats:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        chez: [v9.5.4, main]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Build Chez Scheme ${{ matrix.chez }}
+        working-directory: ${{ runner.temp }}
+        shell: bash
+        run: |
+          git clone --branch ${{ matrix.chez }} --depth 1 --quiet https://github.com/cisco/ChezScheme.git
+          cd ChezScheme
+          ./configure
+          make
+          if [ "$RUNNER_OS" = "Windows" ]
+          then echo "$PWD/a6nt/bin/a6nt" >> $GITHUB_PATH
+          else sudo make install
+          fi
+      - name: Run mats
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        run: src/run-mats

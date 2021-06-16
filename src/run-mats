@@ -6,10 +6,15 @@ function run_suite {
   echo $1
   scheme -q $1 <<EOF
 (reset-handler abort)
-(run-mats)
+(import (swish imports) (swish mat))
+(match (\$run-mats #f #f '() '() #f 'test)
+  [((pass ,_) (fail 0) (skip 0)) (exit 0)]
+  [,_ (exit 1)])
 EOF
 }
 
+trouble=0
 for f in swish/*.ms
-do run_suite $f
+do run_suite $f || trouble=1
 done
+exit $trouble
