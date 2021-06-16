@@ -3,40 +3,11 @@ on: [push]
 env:
   CHEZ_BRANCH: v9.5.4
 jobs:
-  linux-mats:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Build Chez Scheme ${{ env.CHEZ_BRANCH }}
-        working-directory: ${{ runner.temp }}
-        run: |
-          git clone --branch $CHEZ_BRANCH --depth 1 --quiet https://github.com/cisco/ChezScheme.git
-          cd ChezScheme
-          ./configure
-          make
-          sudo make install
-      - name: Run mats
-        working-directory: ${{ github.workspace }}
-        run: src/run-mats
-  mac-mats:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Build Chez Scheme ${{ env.CHEZ_BRANCH }}
-        working-directory: ${{ runner.temp }}
-        run: |
-          git clone --branch $CHEZ_BRANCH --depth 1 --quiet https://github.com/cisco/ChezScheme.git
-          cd ChezScheme
-          ./configure
-          make
-          sudo make install
-      - name: Run mats
-        working-directory: ${{ github.workspace }}
-        run: src/run-mats
-  windows-mats:
-    runs-on: windows-latest
+  mats:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -48,7 +19,10 @@ jobs:
           cd ChezScheme
           ./configure
           make
-          echo "$PWD/a6nt/bin/a6nt" >> $GITHUB_PATH
+          if [ "$RUNNER_OS" = "Windows" ]
+          then echo "$PWD/a6nt/bin/a6nt" >> $GITHUB_PATH
+          else sudo make install
+          fi
       - name: Run mats
         working-directory: ${{ github.workspace }}
         shell: bash
