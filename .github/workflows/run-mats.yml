@@ -1,21 +1,20 @@
 name: run-mats
 on: [push]
-env:
-  CHEZ_BRANCH: v9.5.4
 jobs:
   mats:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
+        chez: [v9.5.4, main]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Build Chez Scheme ${{ env.CHEZ_BRANCH }}
+      - name: Build Chez Scheme ${{ matrix.chez }}
         working-directory: ${{ runner.temp }}
         shell: bash
         run: |
-          git clone --branch $CHEZ_BRANCH --depth 1 --quiet https://github.com/cisco/ChezScheme.git
+          git clone --branch ${{ matrix.chez }} --depth 1 --quiet https://github.com/cisco/ChezScheme.git
           cd ChezScheme
           ./configure
           make
