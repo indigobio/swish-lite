@@ -11,7 +11,6 @@ jobs:
       - name: Build Chez Scheme ${{ env.CHEZ_BRANCH }}
         working-directory: ${{ runner.temp }}
         run: |
-          sudo apt install libsystemd-dev
           git clone --branch $CHEZ_BRANCH --depth 1 --quiet https://github.com/cisco/ChezScheme.git
           cd ChezScheme
           ./configure
