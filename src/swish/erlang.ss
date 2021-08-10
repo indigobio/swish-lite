@@ -161,11 +161,13 @@
      [(x) (lambda (source) x)]
      [xs (lambda (source) (apply values xs))]))
 
+  (define $limit-stack-box (box $limit-stack))
+
   (define-syntax (limit-stack x)
     (syntax-case x ()
       [(ls e0 e1 ...)
-       #`($limit-stack (lambda () e0 e1 ...)
-           #,(find-source #'ls))]))
+       ;; thwart cp0 and ensure $limit-stack appears on the stack
+       #`((unbox $limit-stack-box) (lambda () e0 e1 ...) #,(find-source #'ls))]))
 
   (define (limit-stack? k)
     (and (#3%$continuation? k)

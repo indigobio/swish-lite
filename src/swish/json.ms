@@ -462,24 +462,8 @@
    'ok))
 
 (mat stable-ordering ()
-  (define (find-collision s1 bound)
-    (define (gen)
-      (let* ([len (+ 1 (random 5))]
-             [s (make-string len)])
-        (do ([i 0 (fx+ i 1)]) ((fx= i len) (string->symbol s))
-          (string-set! s i
-            (integer->char (fx+ (char->integer #\a) (random 26)))))))
-    (define target (symbol-hash s1))
-    (let search ([i 0])
-      (and (fx< i bound)
-           (let ([s2 (gen)])
-             (if (= (symbol-hash s2) target)
-                 `(,s1 ,s2)
-                 (search (fx+ i 1)))))))
   (match-let*
-   ([,hash (symbol-hash 'foo)]
-    [,@hash (symbol-hash 'byu)] ;; use find-collision if this fails
-    [,obj1 (json:make-object
+   ([,obj1 (json:make-object
             [foo 1]
             [byu 2])]
     [,str1 (json:object->string obj1)]
@@ -551,11 +535,6 @@
     [#() (dump obj)]
     [,_ (json:delete! obj '(new))]
     [#() (dump obj)]
-    [,ht (make-hashtable symbol-hash eq?)]
-    [#(EXIT #(bad-arg json:delete! ,@ht)) (catch (json:delete! ht 'foo))]
-    [#(EXIT #(bad-arg json:ref ,@ht)) (catch (json:ref ht 'foo #f))]
-    [#(EXIT #(bad-arg json:update! ,@ht))
-     (catch (json:update! ht 'foo values #f))]
     )
    'ok)
   ;; - behavior of json:update! is unspecified if given invalid path

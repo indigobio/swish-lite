@@ -71,14 +71,11 @@
   (define-syntax (json:make-object x)
     (syntax-case x ()
       [(_ (key val) ...)
-       #`(extend-object-internal #,x (make-hashtable symbol-hash json:key=?)
+       #`(extend-object-internal #,x (make-hashtable symbol-hash eq?)
            (key val) ...)]))
 
-  (define (json:key=? x y) (eq? x y))
-
   (define (json:object? x)
-    (and (hashtable? x)
-         (eq? (#3%hashtable-equivalence-function x) json:key=?)))
+    (symbol-hashtable? x))
 
   (define (json:cells x)
     (unless (json:object? x) (bad-arg 'json:cells x))
