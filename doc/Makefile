@@ -15,6 +15,7 @@ swish :=\
   json.tex\
   pregexp.tex\
   cli.tex\
+  testing.tex\
 
 swish-lite.pdf: $(swish)
 
