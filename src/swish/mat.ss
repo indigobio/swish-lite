@@ -25,6 +25,7 @@
    $init-mat-output-file
    $run-mats
    add-mat
+   clear-mats
    for-each-mat
    load-results
    mat
@@ -42,6 +43,7 @@
    mat-result?
    run-mat
    run-mats
+   run-mats-from-file
    run-mats-to-file
    summarize
    summarize-results
@@ -56,6 +58,8 @@
    (swish string-utils))
 
   (define mats (make-parameter '()))
+
+  (define (clear-mats) (mats '()))
 
   (define-record-type (%mat make-mat mat?)
     (nongenerative)
@@ -179,6 +183,14 @@
       [(_) ($run-mats #f)]
       [(_ name1 name2 ...) ($run-mats '(name1 name2 ...))]))
 
+  (define (run-mats-from-file filename)
+    ;; Load the file in an isolated environment
+    (clear-mats)
+    (eval `(load ,filename) (copy-environment (scheme-environment)))
+    (display filename)
+    (newline)
+    (run-mats))
+
   (define (result-type x)
     (cond
      [(eq? x 'pass) 'pass]
@@ -198,7 +210,10 @@
 
   (define $run-mats
     (case-lambda
-     [(mat/names) ($run-mats mat/names #f '() '() #f 'test) (void)]
+     [(mat/names)
+      (match ($run-mats mat/names #f '() '() #f 'test)
+        [((pass ,_) (fail 0) (skip ,_)) #t]
+        [,_ #f])]
      [(mat/names test-file incl-tags excl-tags mo-op progress)
       (let-values ([(update-tally! get-tally) (make-tally-reporter)])
         (define progress-reporter (if (eq? progress 'test) (make-progress-reporter progress) NOP))
