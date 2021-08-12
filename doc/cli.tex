@@ -119,7 +119,7 @@ argument values and check constraints.
   \argrow{short}{a symbol of the form \sopt{x}, where \var{x} is a
     single character, see below}
   \argrow{long}{a symbol of the form \lopt{x}, where \var{x} is a string}
-  \argrow{type}{see Figure~\ref{fig:cli-types}}
+  \argrow{type}{see Table~\ref{tab:cli-types}}
   \argrow{help}{a string or list of strings that describes the
     argument}
   \argrow{conflicts}{a list of \code{<arg-spec>} names}
@@ -130,7 +130,7 @@ To specify \sopt{i} or \sopt{I} for \var{short}, use |\sopt{i}| and
 |\sopt{I}| respectively to prevent Chez Scheme from reading them as
 the complex number $0-1i$.
 
-\begin{figure}[H]
+\begin{table}[H]
 \begin{tabular}{lp{3.6in}}
   Type & Result \\ \hline
   \code{bool} & \code{\#t} \\
@@ -144,8 +144,8 @@ the complex number $0-1i$.
 \end{tabular}\par\medskip
 For each type where \var{x} is specified, \var{x} is a string that is
 used in the help display.
-\caption{Command-line argument types\label{fig:cli-types}}
-\end{figure}
+\caption{Command-line argument types\label{tab:cli-types}}
+\end{table}
 
 The \code{list} types can support multiple \var{x} arguments, for
 instance \code{(list "i1" "i2")} would specify a list of two
@@ -170,9 +170,9 @@ line.
 \end{grammar}
 
 The \var{how} expands into input of the \code{format-spec} procedure
-according to Figure~\ref{fig:cli-usage-keywords}.
+according to Table~\ref{tab:cli-usage-keywords}.
 
-\begin{figure}[H]
+\begin{table}[H]
   \begin{tabular}{r l}
     Keyword & Expands into: \\
     \code{short} & \code{(opt (and short args))} \\
@@ -180,8 +180,8 @@ according to Figure~\ref{fig:cli-usage-keywords}.
     \code{opt} & \code{(opt (and (or short long) args))} \\
     \code{req} & \code{(req (and (or short long) args))}
   \end{tabular}
-  \caption{\code{cli-specs} \var{how} field\label{fig:cli-usage-keywords}}
-\end{figure}
+  \caption{\code{cli-specs} \var{how} field\label{tab:cli-usage-keywords}}
+\end{table}
 
 For options with \var{short} or \var{long} specified, \code{fit} and
 \code{opt} are the defaults. For other options, \code{show} and
@@ -366,7 +366,7 @@ accumulate parsing errors without necessarily generating exceptions.
 
 \begin{tupledef}{<arg-spec>}
   \argrow{name}{a symbol to use as the key of the output hash table}
-  \argrow{type}{see Figure~\ref{fig:cli-types}}
+  \argrow{type}{see Table~\ref{tab:cli-types}}
   \argrow{short}{\code{\#f} $|$ a character}
   \argrow{long}{\code{\#f} $|$ a string }
   \argrow{help}{a string or list of strings describing argument}

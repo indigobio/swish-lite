@@ -188,7 +188,7 @@ Avoid using this form when possible, as it leaks implementation details.
 % ----------------------------------------------------------------------------
 \subsection {Pattern Matching}
 
-The pattern matching syntax of Figure~\ref{fig:erlang-pattern-grammar}
+The pattern matching syntax of Table~\ref{tab:erlang-pattern-grammar}
 provides a concise and expressive way to match data structures and
 bind variables to parts. The \code{match}, \code{match-define}, and
 \code{match-let*} macros use this pattern language. The implementation
@@ -197,7 +197,7 @@ duplicate pattern variables as it emits code that matches the input
 against the pattern left to right.
 
 % ----------------------------------------------------------------------------
-\begin{figure}
+\begin{table}
 \begin{tabular}{p{1.8in}p{4.2in}}
   pattern & matches \\ \hline
 
@@ -238,8 +238,8 @@ against the pattern left to right.
 \hline
 \end{tabular}
 
-\caption{Pattern Grammar\label{fig:erlang-pattern-grammar}}
-\end{figure}
+\caption{Pattern Grammar\label{tab:erlang-pattern-grammar}}
+\end{table}
 
 % ----------------------------------------------------------------------------
 \defineentry{match}
@@ -261,7 +261,7 @@ pattern variables. If $v$ fails to match all patterns, exception
 \code{\#(bad-match $v$ \var{src})} is raised, where \var{src} is the
 source location of the \code{match} clause if available.
 
-See Figure~\ref{fig:erlang-pattern-grammar} for the pattern grammar.
+See Table~\ref{tab:erlang-pattern-grammar} for the pattern grammar.
 
 % ----------------------------------------------------------------------------
 \defineentry{match-define}
@@ -280,7 +280,7 @@ If the pattern fails to match, exception
 that failed to match the pattern at source location \var{src}
 if available.
 
-See Figure~\ref{fig:erlang-pattern-grammar} for the pattern grammar.
+See Table~\ref{tab:erlang-pattern-grammar} for the pattern grammar.
 
 % ----------------------------------------------------------------------------
 \defineentry{match-let*}
@@ -302,7 +302,7 @@ to match or any \var{g} returns \code{\#f}, exception
 that failed to match the pattern or guard at source location \var{src}
 if available.
 
-See Figure~\ref{fig:erlang-pattern-grammar} for the pattern grammar.
+See Table~\ref{tab:erlang-pattern-grammar} for the pattern grammar.
 
 % ----------------------------------------------------------------------------
 \defineentry{define-match-extension}
