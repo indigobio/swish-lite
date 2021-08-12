@@ -163,20 +163,6 @@ The \code{s/any?} procedure returns a transformer that returns true if and only 
 stream has at least one value. If \var{procedure} is provided, the stream is first
 filtered with \var{procedure}.
 
-\begin{table}
-  \center
-  \begin{tabular}{ll}
-    Key Type & Constructor \\ \hline
-    fixnum, record, or boolean & \code{(make-eq-hashtable)} \\
-    non-fixnum number or char & \code{(make-eqv-hashtable)} \\
-    string & \code{(make-hashtable string-hash string=?)} \\
-    symbol & \code{(make-hashtable symbol-hash eq?)} \\
-    else & \code{(make-hashtable equal-hash equal?)}\\
-    \hline
-  \end{tabular}
-  \caption{Hashtable Type Inference}\label{tab:stream-ht}
-\end{table}
-
 \defineentry{s/by-key}
 \begin{procedure}
   \code{(s/by-key \var{procedure} \opt{\var{hash} \var{equiv?}})}
@@ -189,6 +175,20 @@ stream by key function \var{procedure} into a hashtable created with \code{(make
 appropriate for the first key is created (see Table~\ref{tab:stream-ht}). If two values
 $v_1$ and $v_2$ have the same key \var{k}, error \code{\#(duplicate-key \var{k} $v_1$
   $v_2$)} is raised.
+
+\begin{table}[H]
+  \center
+  \begin{tabular}{ll}
+    Key Type & Constructor \\ \hline
+    fixnum, record, or boolean & \code{(make-eq-hashtable)} \\
+    non-fixnum number or char & \code{(make-eqv-hashtable)} \\
+    string & \code{(make-hashtable string-hash string=?)} \\
+    symbol & \code{(make-hashtable symbol-hash eq?)} \\
+    else & \code{(make-hashtable equal-hash equal?)}\\
+    \hline
+  \end{tabular}
+  \caption{Hashtable Type Inference}\label{tab:stream-ht}
+\end{table}
 
 \defineentry{s/cells}
 \begin{variable}
