@@ -13,6 +13,7 @@ scheme -q <<EOF
           "swish/json.ms"
           "swish/meta.ms"
           "swish/pregexp.ms"
+          "swish/stream.ms"
           "swish/string-utils.ms"
           )))
     (exit 0)

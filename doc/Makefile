@@ -14,6 +14,7 @@ swish :=\
   erlang.tex\
   json.tex\
   pregexp.tex\
+  stream.tex\
   cli.tex\
   testing.tex\
 
