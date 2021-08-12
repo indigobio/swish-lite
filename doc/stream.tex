@@ -148,6 +148,7 @@ The \code{s/all?} procedure returns a transformer that returns true if and only 
 \begin{variable}
   \code{s/any}
 \end{variable}
+\antipar
 
 The \code{s/any} variable is a transformer that returns false if the stream is empty, and
 the stream itself if non-empty.
@@ -193,6 +194,7 @@ $v_1$ and $v_2$ have the same key \var{k}, error \code{\#(duplicate-key \var{k} 
 \begin{variable}
   \code{s/cells}
 \end{variable}
+\antipar
 
 The \code{s/cells} variable is a transformer that returns a stream of cells
 \code{(\var{k}~.~\var{v})} of the given hashtable in no particular order.
@@ -250,6 +252,7 @@ positive integer.
 \begin{variable}
   \code{s/concat}
 \end{variable}
+\antipar
 
 The \code{s/concat} variable is a transformer that concatenates a heterogeneous stream of
 streams, lists, or vectors.
@@ -354,6 +357,7 @@ The \code{s/find} procedure returns the transformer composition of \code{(s/filt
 \begin{variable}
   \code{s/first}
 \end{variable}
+\antipar
 
 The \code{s/first} variable is a transformer that returns the first value in the stream, or
 false if the stream is empty.
@@ -479,6 +483,7 @@ the string as with \code{display}. It returns the empty string if the stream is 
 \begin{variable}
   \code{s/last}
 \end{variable}
+\antipar
 
 The \code{s/last} variable is a transformer that returns the last value in a finite stream,
 or false if the stream is empty.
@@ -487,6 +492,7 @@ or false if the stream is empty.
 \begin{variable}
   \code{s/length}
 \end{variable}
+\antipar
 
 The \code{s/length} variable is a transformer that returns the number of values in a
 finite stream.
@@ -630,6 +636,7 @@ with \var{procedure}.
 \begin{variable}
   \code{s/reverse}
 \end{variable}
+\antipar
 
 The \code{s/reverse} variable is a transformer that reverses a finite stream and returns
 its values in a list.
@@ -670,6 +677,7 @@ value \var{x}. It returns a list of the sorted values.
 \begin{variable}
   \code{s/sum}
 \end{variable}
+\antipar
 
 The \code{s/sum} variable is a transformer that returns the sum of values in a finite
 stream.
@@ -731,6 +739,7 @@ The following procedures and forms may be helpful in creating new transformers.
 \begin{variable}
   \code{eos}
 \end{variable}
+\antipar
 
 The \code{eos} variable is the end-of-stream object.
 
@@ -791,6 +800,7 @@ because this library cannot distinguish it from a stream.
 \begin{variable}
   \code{empty-stream}
 \end{variable}
+\antipar
 
 The \code{empty-stream} variable is the empty stream.
 
