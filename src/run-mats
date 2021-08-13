@@ -7,14 +7,7 @@ scheme -q <<EOF
 (if (for-all values
       (map run-mats-from-file
         '(
-          "swish/cli.ms"
-          "swish/erlang.ms"
-          "swish/html.ms"
-          "swish/json.ms"
-          "swish/meta.ms"
-          "swish/pregexp.ms"
           "swish/stream.ms"
-          "swish/string-utils.ms"
           )))
     (exit 0)
     (exit 1))

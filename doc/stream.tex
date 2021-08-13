@@ -59,8 +59,9 @@ zero or more transformers and then applies them to an argument.
 \returns{} see below
 
 The \code{s/>} procedure applies transformers \var{t} \ldots\ to \var{x} in order. If
-\var{x} is a list or vector, it is converted to a stream. If the final transformation
-result is a stream, it is converted to a list. Otherwise, it is returned.
+\var{x} is a list or vector, it is converted to a stream. If the final
+transformation result is a stream, it is converted to a list. If it is a stream
+box (see \ref{sec:s/stream}), it is unboxed. Otherwise, it is returned.
 
 \code{s/>} is pronounced ``stream pipe.''
 
@@ -671,6 +672,29 @@ value \var{x}. It returns a list of the sorted values.
 \codebegin
 > (s/> '(-3 -2 1 4) (s/sort-by abs <))
 (1 -2 -3 4)
+\codeend
+
+\defineentry{s/stream}\label{sec:s/stream}
+\begin{variable}
+  \code{s/stream}
+\end{variable}
+\antipar
+
+The \code{s/stream} variable is a transformer that boxes its input. Using \code{s/stream}
+as the last transformer in a pipeline effectively prevents \code{s/>} from attempting to
+convert from stream to list, which can improve performance of nested pipelines.
+
+\codebegin
+> (s/> chapters
+    (s/map-concat
+     (lambda (c)
+       (s/> (chapter-sections c)
+         (s/map (lambda (s) (list (chapter-name c) s)))
+         s/stream))))
+(("Erlang Embedding" "Introduction")
+ ("Erlang Embedding" "Tuples")
+ ("Stream Library" "Introduction")
+ ("Stream Library" "Transformers"))
 \codeend
 
 \defineentry{s/sum}

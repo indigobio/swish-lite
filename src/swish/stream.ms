@@ -276,4 +276,5 @@
                [(2 3 4) (s/> '#(1 2 3) (s/map 1+))]
                [1 (s/> (cons 1 2) car)]
                )
+    (assert (procedure? (s/> (stream 1) s/stream)))
     'ok))

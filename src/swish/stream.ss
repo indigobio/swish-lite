@@ -73,6 +73,7 @@
    s/reverse
    s/sort
    s/sort-by
+   s/stream
    s/sum
    s/take
    s/take-while
@@ -96,6 +97,8 @@
   (define (eos? x) (eq? x eos))
   (define empty-stream (lambda () eos))
   (define nil '#{nil l7rxffkwi4beedkbqv8sqmbyi-48})
+
+  (define-record-type stream-box (opaque #t) (fields value))
 
   (define (stream . ls)
     (list->stream ls))
@@ -209,9 +212,10 @@
 
   (define (s/> x . ts)
     (let ([v ((transformer-compose* ts) (->stream x))])
-      (if (stream? v)
-          (stream->list v)
-          v)))
+      (cond
+       [(stream? v) (stream->list v)]
+       [(stream-box? v) (stream-box-value v)]
+       [else v])))
 
   (define-syntax define-stream-transformer
     (syntax-rules ()
@@ -604,6 +608,9 @@
          [(eos? x) #t]
          [(f x) (lp)]
          [else #f]))))
+
+  (define (s/stream x)
+    (make-stream-box x))
 
   (define-stream-transformer (s/sum s)
     (let lp ([sum 0])
