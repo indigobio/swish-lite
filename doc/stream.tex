@@ -301,6 +301,17 @@ a stream. $n$ must be an exact integer. If $n$ is negative, it returns the input
 unchanged. If $n$ is greater than or equal to the length of the stream, it returns the
 empty stream.
 
+\defineentry{s/drop-last}
+\begin{procedure}
+  \code{(s/drop-last $n$)}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/drop-last} procedure returns a transformer that returns a stream containing
+all but the last $n$ values in a finite input stream. $n$ must be an exact integer. If $n$
+is negative, it returns the input stream unchanged. If $n$ is greater than or equal to the
+length of the stream, it returns the empty stream.
+
 \defineentry{s/drop-while}
 \begin{procedure}
   \code{(s/drop-while \var{procedure})}
@@ -714,6 +725,17 @@ stream.
 
 The \code{s/take} procedure returns a transformer that limits a stream to the first $n$
 values. $n$ must be an exact integer. If $n$ is negative, it returns the empty stream.
+
+\defineentry{s/take-last}
+\begin{procedure}
+  \code{(s/take-last $n$)}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/take-last} procedure returns a transformer that returns a stream containing
+the last $n$ values in a finite input stream. $n$ must be an exact integer. If $n$ is
+negative, it returns the empty stream. If $n$ is greater than or equal to the length of
+the stream, it returns the input stream unchanged.
 
 \defineentry{s/take-while}
 \begin{procedure}

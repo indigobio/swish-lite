@@ -42,6 +42,7 @@
    s/count
    s/do
    s/drop
+   s/drop-last
    s/drop-while
    s/extrema
    s/extrema-by
@@ -76,6 +77,7 @@
    s/stream
    s/sum
    s/take
+   s/take-last
    s/take-while
    s/uniq
    s/uniq-by
@@ -303,6 +305,13 @@
                       (set! n (#3%fx1- n))
                       x)))))))
 
+  (define-stream-transformer (s/take-last s n)
+    (unless (fixnum? n) (bad-arg 's/take-last n))
+    (cond
+     [(<= n 0) empty-stream]
+     [(= n 1) (stream (s/last s))]
+     [else (s/> s s/reverse (s/take n) s/reverse)]))
+
   (define-stream-transformer (s/drop s n)
     (unless (fixnum? n) (bad-arg 's/drop n))
     (if (#3%fx<= n 0)
@@ -311,6 +320,50 @@
           (if (or (eos? x) (#3%fxzero? n))
               s
               (lp (#3%fx1- n) (s))))))
+
+  (define-stream-transformer (s/drop-last s n)
+    (unless (fixnum? n) (bad-arg 's/drop-last n))
+    (if (<= n 0)
+        s
+        (let ([ls '()] [last '()] [len 0])
+          (lambda ()
+            (let lp ([x (s)])
+              (if (eos? x)
+                  eos
+                  (call-with-values
+                    (lambda () (window-add! ls last len n x))
+                    (case-lambda
+                     [() (lp (s))]
+                     [(v) v]))))))))
+
+  (define-syntax window-add!
+    (syntax-rules ()
+      [(_ a b len max in)
+       (let ()
+         (define-syntax add
+           (syntax-rules ()
+             [(_)
+              (let ([last b]
+                    [last* (list in)])
+                (set-cdr! last last*)
+                (set! b last*)
+                (set! len (1+ len)))]))
+         (cond
+          [(null? a)
+           (let ([p (list in)])
+             (set! a p)
+             (set! b p)
+             (set! len 1))
+           (values)]
+          [(= len max)
+           (let ([v (car a)])
+             (add)
+             (set! a (cdr a))
+             (set! len (1- len))
+             (values v))]
+          [else
+           (add)
+           (values)]))]))
 
   (define-stream-transformer (s/take-while s f)
     (lambda ()
