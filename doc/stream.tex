@@ -318,9 +318,9 @@ length of the stream, it returns the empty stream.
 \end{procedure}
 \returns{} a transformer
 
-The \code{s/drop-while} procedure returns a transformer that returns the first tail that
-starts with the first value for which \var{procedure} returns false. If \var{procedure}
-returns a true value for all values, it returns the empty stream.
+The \code{s/drop-while} procedure returns a transformer that returns the tail that starts
+with the first value for which \var{procedure} returns false. If \var{procedure} returns a
+true value for all values, it returns the empty stream.
 
 \codebegin
 > (s/> '(1 3 4 5) (s/drop-while odd?))
@@ -745,7 +745,8 @@ the stream, it returns the input stream unchanged.
 
 The \code{s/take-while} procedure returns a transformer that returns the stream of values
 up to but not including the first one for which \var{procedure} returns false. If
-\var{procedure} returns a true value for all values, it returns the empty stream.
+\var{procedure} returns a true value for all values, it returns the input stream
+unchanged.
 
 \defineentry{s/uniq}
 \begin{procedure}
