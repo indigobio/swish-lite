@@ -305,12 +305,12 @@
                       (set! n (#3%fx1- n))
                       x)))))))
 
-  (define-stream-transformer (s/take-last s n)
+  (define (s/take-last n)
     (unless (fixnum? n) (bad-arg 's/take-last n))
     (cond
-     [(<= n 0) empty-stream]
-     [(= n 1) (stream (s/last s))]
-     [else (s/> s s/reverse (s/take n) s/reverse)]))
+     [(#3%fx<= n 0) (lambda (_) empty-stream)]
+     [(#3%fx= n 1) (lambda (s) (stream (s/last s)))]
+     [else (transformer-compose* (list s/reverse (s/take n) s/reverse))]))
 
   (define-stream-transformer (s/drop s n)
     (unless (fixnum? n) (bad-arg 's/drop n))
@@ -323,7 +323,7 @@
 
   (define-stream-transformer (s/drop-last s n)
     (unless (fixnum? n) (bad-arg 's/drop-last n))
-    (if (<= n 0)
+    (if (#3%fx<= n 0)
         s
         (let ([ls '()] [last '()] [len 0])
           (lambda ()
@@ -336,29 +336,30 @@
                      [() (lp (s))]
                      [(v) v]))))))))
 
+  ;; Maintains a sliding window. Once the window is full, adding a value to the tail emits the
+  ;; head.
   (define-syntax window-add!
     (syntax-rules ()
-      [(_ a b len max in)
+      [(_ ls last len max in)
        (let ()
          (define-syntax add
            (syntax-rules ()
              [(_)
-              (let ([last b]
-                    [last* (list in)])
+              (let ([last* (list in)])
                 (set-cdr! last last*)
-                (set! b last*)
+                (set! last last*)
                 (set! len (1+ len)))]))
          (cond
-          [(null? a)
+          [(null? ls)
            (let ([p (list in)])
-             (set! a p)
-             (set! b p)
+             (set! ls p)
+             (set! last p)
              (set! len 1))
            (values)]
           [(= len max)
-           (let ([v (car a)])
+           (let ([v (car ls)])
              (add)
-             (set! a (cdr a))
+             (set! ls (cdr ls))
              (set! len (1- len))
              (values v))]
           [else
