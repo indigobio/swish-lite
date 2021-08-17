@@ -3,6 +3,8 @@
 Swish Lite is a set of Chez Scheme libraries based on the [Swish
 Concurrency Engine](https://github.com/indigobio/swish).
 
+[Documentation](https://indigobio.github.io/swish-lite/swish-lite.pdf)
+
 # Build System Requirements
 
 ## Linux
@@ -23,3 +25,7 @@ Concurrency Engine](https://github.com/indigobio/swish).
 - Cygwin or MinGW/MSYS with bash, git, graphviz, grep, perl, texlive,
   GNU make, etc.
 - Put scheme in PATH.
+
+# Maintenance
+
+Run `update-pdf` and force-push branch `gh-pages` when documentation changes.
