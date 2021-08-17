@@ -25,3 +25,16 @@ Concurrency Engine](https://github.com/indigobio/swish).
 - Cygwin or MinGW/MSYS with bash, git, graphviz, grep, perl, texlive,
   GNU make, etc.
 - Put scheme in PATH.
+
+# Maintenance
+
+Update the PDF when documentation changes.
+
+```
+make -C doc
+git checkout gh-pages
+cp doc/swish-lite.pdf .
+git add -u swish-lite.pdf
+git commit --amend --no-edit
+git push -f origin
+```
