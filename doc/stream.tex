@@ -118,6 +118,19 @@ next state.
 (1 2 3)
 \codeend
 
+\codebegin
+> (define (range a b step)
+    (stream-unfold
+     (lambda (n)
+       (cond
+        [(< n b) (values n (+ n step))]
+        [(= n b) (values n)]
+        [else (values)]))
+     a))
+> (stream->list (range 10 30 5))
+(10 15 20 25 30)
+\codeend
+
 \defineentry{stream-repeat}
 \begin{procedure}
   \code{(stream-repeat \var{n} \var{procedure})}
