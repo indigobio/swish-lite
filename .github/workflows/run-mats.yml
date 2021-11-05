@@ -3,9 +3,10 @@ on: [push]
 jobs:
   mats:
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-        chez: [v9.5.4, main]
+        os: [macos-11, ubuntu-20.04, windows-2019]
+        chez: [v9.5.4, v9.5.6]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
