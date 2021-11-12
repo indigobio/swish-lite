@@ -437,10 +437,10 @@
                        eos
                        (let* ([k fx]
                               [c (hashtable-cell (ensure-ht k) k #f)])
-                         (if (cdr c)
+                         (if (#3%cdr c)
                              (lp)
                              (begin
-                               (set-cdr! c #t)
+                               (#3%set-cdr! c #t)
                                x))))))))))]))
 
   (define s/uniq
@@ -475,9 +475,9 @@
                      (let* ([k fkx]
                             [c (hashtable-cell (ensure-ht k) k nil)])
                        (let ([v fvx])
-                         (if (eq? (cdr c) nil)
+                         (if (eq? (#3%cdr c) nil)
                              (begin
-                               (set-cdr! c v)
+                               (#3%set-cdr! c v)
                                (lp))
                              (throw `#(duplicate-key ,k ,(cdr c) ,v)))))))))))]))
 
@@ -511,7 +511,7 @@
                        ht)
                      (let* ([k fkx]
                             [c (hashtable-cell (ensure-ht k) k '())])
-                       (set-cdr! c (cons fvx (cdr c)))
+                       (#3%set-cdr! c (cons fvx (#3%cdr c)))
                        (lp))))))))]))
 
   (define s/group-by
