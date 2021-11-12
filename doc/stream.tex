@@ -27,7 +27,7 @@
 Streams facilitate composition of higher-order functions like map, filter, and fold, while
 minimizing allocation of intermediate data structures. The \code{s/>} procedure allows
 expressions analogous to those found in \csharp, Ruby, and other popular languages, in
-which a stream of values is passed through a "pipeline" of operators.
+which a stream of values is passed through a pipeline of operators.
 
 A \emph{stream}\index{stream} is a procedure of zero arguments that advances the position
 within the stream and returns the next value or the end-of-stream object \emph{eos}.
@@ -117,6 +117,19 @@ next state.
     (stream-unfold (lambda (n) (values n (+ n 1))) n))
 > (s/> (numbers-from 1) (s/take 3))
 (1 2 3)
+\codeend
+
+\codebegin
+> (define (range a b step)
+    (stream-unfold
+     (lambda (n)
+       (cond
+        [(< n b) (values n (+ n step))]
+        [(= n b) (values n)]
+        [else (values)]))
+     a))
+> (stream->list (range 10 30 5))
+(10 15 20 25 30)
 \codeend
 
 \defineentry{stream-repeat}
@@ -318,9 +331,9 @@ length of the stream, it returns the empty stream.
 \end{procedure}
 \returns{} a transformer
 
-The \code{s/drop-while} procedure returns a transformer that returns the tail that starts
-with the first value for which \var{procedure} returns false. If \var{procedure} returns a
-true value for all values, it returns the empty stream.
+The \code{s/drop-while} procedure returns a transformer that returns the tail of the
+stream starting with the first value for which \var{procedure} returns false. If
+\var{procedure} returns a true value for all values, it returns the empty stream.
 
 \codebegin
 > (s/> '(1 3 4 5) (s/drop-while odd?))
