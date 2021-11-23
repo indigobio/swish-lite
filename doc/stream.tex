@@ -147,6 +147,25 @@ order with \var{i} starting at 0.
 (0 1 2 3 4)
 \codeend
 
+\defineentry{stream-lift}
+\begin{procedure}
+  \code{(stream-lift \var{p})}
+\end{procedure}
+\returns{} a procedure
+
+The \code{stream-lift} procedure returns a procedure that converts its argument with
+\code{unstream} then passes it to \var{p}. It can be used to include a non-stream-aware
+procedure in a stream pipeline.
+
+\defineentry{unstream}
+\begin{procedure}
+  \code{(unstream \var{x})}
+\end{procedure}
+\returns{} see below
+
+The \code{unstream} procedure converts \var{x} to a non-stream value. If \var{x} is a
+stream, it is converted to a list. If the argument is a stream box, it is unboxed.
+
 \section {Transformers}
 
 \defineentry{s/all?}

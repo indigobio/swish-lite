@@ -290,3 +290,8 @@
                )
     (assert (procedure? (s/> (stream 1) s/stream)))
     'ok))
+
+(mat stream-lift ()
+  (match-let* ([(3 2 1) (s/> '(1 2 3) (stream-lift reverse))]
+               [(1 2 3) (unstream (stream 1 2 3))])
+    'ok))

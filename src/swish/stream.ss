@@ -89,8 +89,10 @@
    stream-repeat
    stream-unfold
    stream?
+   stream-lift
    transformer-compose
    transformer-compose*
+   unstream
    vector->stream
    )
   (import (chezscheme) (swish erlang))
@@ -200,6 +202,16 @@
      [(vector? x) (vector->stream x)]
      [else x]))
 
+  (define (unstream v)
+    (cond
+     [(stream? v) (stream->list v)]
+     [(stream-box? v) (stream-box-value v)]
+     [else v]))
+
+  (define (stream-lift p)
+    (lambda (x)
+      (p (unstream x))))
+
   (define (require-stream x)
     (let ([x (->stream x)])
       (if (stream? x)
@@ -213,11 +225,7 @@
     (fold-left transformer-compose values ts))
 
   (define (s/> x . ts)
-    (let ([v ((transformer-compose* ts) (->stream x))])
-      (cond
-       [(stream? v) (stream->list v)]
-       [(stream-box? v) (stream-box-value v)]
-       [else v])))
+    (unstream ((transformer-compose* ts) (->stream x))))
 
   (define-syntax define-stream-transformer
     (syntax-rules ()
