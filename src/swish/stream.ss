@@ -27,6 +27,7 @@
    empty-stream
    eos
    eos?
+   hashtable->stream
    list->stream
    require-stream
    s/>
@@ -125,6 +126,11 @@
             (#3%vector-ref v i)
             eos))))
 
+  (define (hashtable->stream ht)
+    (vector->stream (hashtable-cells ht)))
+
+  (alias s/cells hashtable->stream)
+
   (define (stream->list s)
     (let ([x (s)])
       (if (eos? x)
@@ -195,11 +201,12 @@
               x)
             eos))))
 
-  (define (->stream x)
+  (define (->stream x ht?)
     (cond
      [(stream? x) x]
      [(list? x) (list->stream x)]
      [(vector? x) (vector->stream x)]
+     [(and ht? (hashtable? x)) (hashtable->stream x)]
      [else x]))
 
   (define (unstream v)
@@ -213,7 +220,7 @@
       (p (unstream x))))
 
   (define (require-stream x)
-    (let ([x (->stream x)])
+    (let ([x (->stream x #t)])
       (if (stream? x)
           x
           (throw `#(invalid-stream ,x)))))
@@ -225,7 +232,7 @@
     (fold-left transformer-compose values ts))
 
   (define (s/> x . ts)
-    (unstream ((transformer-compose* ts) (->stream x))))
+    (unstream ((transformer-compose* ts) (->stream x #f))))
 
   (define-syntax define-stream-transformer
     (syntax-rules ()
@@ -548,10 +555,6 @@
      [(symbol? k) (make-hashtable symbol-hash eq?)]
      [else (make-hashtable equal-hash equal?)]))
 
-  (define s/cells
-    (lambda (ht)
-      (vector->stream (hashtable-cells ht))))
-
   (define (s/chunk-every n)
     (unless (and (fixnum? n) (positive? n)) (bad-arg 's/chunk-every n))
     ($stream-transformer (s n)
@@ -785,6 +788,7 @@
        [(stream? x) (sort lt (stream->list x))]
        [(list? x) (sort lt x)]
        [(vector? x) (vector->list (vector-sort lt x))]
+       [(hashtable? x) (vector->list (vector-sort lt (hashtable-cells x)))]
        [else (throw `#(invalid-stream ,x))])))
 
   (define (s/sort-by f lt)

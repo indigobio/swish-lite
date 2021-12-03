@@ -164,11 +164,9 @@
                                             (s/sort-by car string<?))]
                [(("a" 1 3) ("b" 2)) (s/> '(("a" . 1) ("b" . 2) ("a" . 3))
                                       (s/ht* car cdr)
-                                      s/cells
                                       (s/sort-by car string<?))]
                [(("a" . -1) ("b" . -2)) (s/> '(("a" . 1) ("b" . 2))
                                           (s/ht car (lambda (x) (- (cdr x))))
-                                          s/cells
                                           (s/sort-by car string<?))]
                [`(catch #(duplicate-key "a" 1 2))
                 (try (s/> '(("a" . 1) ("A" . 2))
@@ -221,6 +219,15 @@
                [(,@a ,@b) (s/> (list a b a) (s/uniq))]
                [("a" "b") (s/> (list "a" "b" "a") (s/uniq))]
                [(1.1 2.2) (s/> (list 1.1 2.2 1.1) (s/uniq))]
+               )
+    'ok))
+
+(mat hashtables ()
+  (define ht (s/> '((a . 1) (b . 2)) (s/ht car cdr)))
+  (assert (hashtable? (s/> ht)))   ;; not implicitly coerced in or out
+  (match-let* ([(a b) (s/> ht (s/map car))]
+               [(a b) (s/> ht s/cells (s/map car))]
+               [((1 . a) (2 . b)) (s/> ht (s/ht cdr car) (s/sort-by car <))]
                )
     'ok))
 

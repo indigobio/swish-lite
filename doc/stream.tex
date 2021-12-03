@@ -91,6 +91,15 @@ order.
 The \code{vector->stream} procedure returns a stream containing the values in
 \var{vector}, in order.
 
+\defineentry{hashtable->stream}
+\begin{procedure}
+  \code{(hashtable->stream \var{hashtable})}
+\end{procedure}
+\returns{} a stream
+
+The \code{hashtable->stream} procedure returns a stream containing the cells of
+\var{hashtable}.
+
 \defineentry{stream->list}
 \begin{procedure}
   \code{(stream->list \var{stream})}
@@ -909,8 +918,9 @@ the values of \var{stream}.
 
 The \code{require-stream} procedure returns \var{x} if it is a stream. If \var{x} is a
 list, \code{require-stream} returns \code{(list->stream \var{x})}. If \var{x} is a vector,
-it returns \code{(vector->stream \var{x})}. Otherwise, error \code{\#(invalid-stream
-  \var{x})} is raised.
+it returns \code{(vector->stream \var{x})}. If \var{x} is a hashtable, it returns
+\code{(hashtable->stream \var{x})}. Otherwise, error \code{\#(invalid-stream \var{x})} is
+raised.
 
 \defineentry{transformer-compose}
 \begin{procedure}
