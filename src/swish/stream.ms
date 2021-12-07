@@ -198,6 +198,12 @@
                [(("a" . 1) ("b" . 2)) (s/> '((a . 1) (b . 2)) (s/map-car symbol->string))]
                [((a . 2) (b . 3)) (s/> '((a . 1) (b . 2)) (s/map-cdr 1+))]
                [((1 . -1) (2 . -2)) (s/> '(1 2) (s/map-cons -))]
+               [((a . 0) (b . 1) (c . 2)) (s/> '(a b c) (s/map-index cons))]
+               [`(catch #(stream-length-mismatch c)) (try (s/> '(a b c) (s/zip '(0 1) cons)))]
+               [((a b) (b c) (c d)) (s/> '(a b c d) (s/map-window 2 values))]
+               [((c b a) (d c b)) (s/> '(a b c d) (s/map-window 3 reverse))]
+               [((a) (b) (c)) (s/> '(a b c) (s/map-window 1 values))]
+               [`(catch #(bad-arg s/map-window 0)) (try (s/map-window 0 values))]
                )
     'ok))
 
@@ -303,4 +309,15 @@
 (mat stream-lift ()
   (match-let* ([(3 2 1) (s/> '(1 2 3) (stream-lift reverse))]
                [(1 2 3) (unstream (stream 1 2 3))])
+    'ok))
+
+(mat stream-yield ()
+  (define (fibs)
+    (stream-yield
+     (let lp ([a 0] [b 1])
+       (yield a)
+       (lp b (+ a b)))))
+  (match-let* ([() (stream->list (stream-yield))]
+               [(0 1 1 2 3 5 8 13) (s/> (fibs) (s/take 8))]
+               )
     'ok))

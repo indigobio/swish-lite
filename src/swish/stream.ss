@@ -66,9 +66,11 @@
    s/map-cons
    s/map-extrema
    s/map-filter
+   s/map-index
    s/map-max
    s/map-min
    s/map-uniq
+   s/map-window
    s/max
    s/max-by
    s/mean
@@ -85,13 +87,16 @@
    s/take-while
    s/uniq
    s/uniq-by
+   s/zip
    stream
    stream->list
    stream->vector
    stream-cons
    stream-cons*
+   stream-for-each
    stream-repeat
    stream-unfold
+   stream-yield
    stream?
    stream-lift
    transformer-compose
@@ -179,6 +184,33 @@
                     (set! args t))
                 h)))))
     (lambda () (get)))
+
+  (define-syntax (stream-yield x)
+    (syntax-case x ()
+      [(k e ...)
+       (with-implicit (k yield)
+         #'(let ()
+             (define return #f)
+             (define (resume _)
+               e ...
+               (set! resume (lambda (_) eos))
+               (return eos))
+             (define (yield v) (mark/cc resume (return v)))
+             (lambda () (mark/cc return (resume (void))))))]))
+
+  (define-syntax mark/cc
+    (syntax-rules ()
+      [(_ id e ...)
+       (call/1cc
+        (lambda (k)
+          (set! id k)
+          e ...))]))
+
+  (define (stream-for-each f s)
+    (let lp ([x (s)])
+      (unless (eos? x)
+        (f x)
+        (lp (s)))))
 
   (define (stream-unfold p state)
     (lambda ()
@@ -274,6 +306,23 @@
         (if (eos? x)
             eos
             (f x)))))
+
+  (define-stream-transformer (s/zip s s2 f)
+    (let ([s2 (require-stream s2)])
+      (lambda ()
+        (let ([x (s)])
+          (if (eos? x)
+              eos
+              (let ([x2 (s2)])
+                (if (eos? x2)
+                    (throw `#(stream-length-mismatch ,x))
+                    (f x x2))))))))
+
+  (define (s/map-index f)
+    (s/zip (numbers-from 0) f))
+
+  (define (numbers-from n)
+    (stream-unfold (lambda (n) (values n (+ n 1))) n))
 
   (define-stream-transformer (s/concat s)
     (let ([head empty-stream])
@@ -792,6 +841,24 @@
     (case-lambda
      [(f) (transformer-compose (s/map f) (s/extrema))]
      [(f lt gt) (transformer-compose (s/map f) (s/extrema lt gt))]))
+
+  (define (s/map-window n f)
+    (unless (and (fixnum? n) (positive? n)) (bad-arg 's/map-window n))
+    ($stream-transformer (s n f)
+      (let ([ls '()] [last '()] [len 0])
+        (lambda ()
+          (let lp ([x (s)])
+            (if (eos? x)
+                eos
+                (call-with-values
+                  (lambda () (window-add! ls last len n x))
+                  (case-lambda
+                   [()
+                    (if (#3%fx= len n)
+                        (f (fold-right cons '() ls))
+                        (lp (s)))]
+                   [(v)
+                    (f (fold-right cons '() ls))]))))))))
 
   (define (s/find f)
     (transformer-compose (s/filter f) s/first))

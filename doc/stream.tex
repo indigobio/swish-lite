@@ -140,6 +140,15 @@ next state.
 (10 15 20 25 30)
 \codeend
 
+\defineentry{stream-for-each}
+\begin{procedure}
+  \code{(stream-for-each \var{procedure} \var{stream})}
+\end{procedure}
+\returns{} unspecified
+
+The \code{stream-for-each} procedure invokes \var{procedure} on each value in \var{stream}
+in order.
+
 \defineentry{stream-repeat}
 \begin{procedure}
   \code{(stream-repeat \var{n} \var{procedure})}
@@ -173,6 +182,27 @@ non-stream-aware procedure in a stream pipeline.
 
 If \var{x} is a stream, it returns \code{(stream->list \var{x})}. If \var{x} is a stream
 box (see \code{s/stream}), it is unboxed. Otherwise, it returns \var{x}.
+
+\defineentry{stream-yield}
+\begin{syntax}
+  \code{(stream-yield $e$ \ldots)}
+\end{syntax}
+\expandsto{} a stream
+
+The \code{stream-yield} form returns a stream of values dictated by expressions $e$ \ldots. It
+introduces \code{yield}, a procedure of one argument, into the scope of the expressions.
+The expressions are evaluated incrementally as values are pulled from the stream. Each
+evaluation of \code{(yield \var{x})} emits value \var{x}.
+
+\codebegin
+> (define (fibs)
+    (stream-yield
+     (let lp ([a 0] [b 1])
+       (yield a)
+       (lp b (+ a b)))))
+> (s/> (fibs) (s/take 10))
+(0 1 1 2 3 5 8 13 21 34)
+\codeend
 
 \section {Transformers}
 
@@ -634,6 +664,20 @@ The \code{s/map-filter} procedure returns the transformer composition of \code{(
 (1 3)
 \codeend
 
+\defineentry{s/map-index}
+\begin{procedure}
+  \code{(s/map-index \var{procedure})}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/map-index} procedure returns a transformer that maps stream values with
+\var{procedure}, passing the zero-based index as the second argument.
+
+\codebegin
+> (s/> '(a b c) (s/map-index cons))
+((a . 0) (b . 1) (c . 2))
+\codeend
+
 \defineentry{s/map-max}
 \begin{procedure}
   \code{(s/map-max \var{procedure} \opt{\var{gt}})}
@@ -660,6 +704,21 @@ The \code{s/map-min} procedure returns the transformer composition of \code{(s/m
 
 The \code{s/map-uniq} procedure returns the transformer composition of \code{(s/map
   \var{procedure})} and \code{(s/uniq \opt{\var{hash} \var{equiv?}})}.
+
+\defineentry{s/map-window}
+\begin{procedure}
+  \code{(s/map-window $n$ \var{procedure})}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/map-window} procedure returns a transformer that maps over each substream of
+length $n$. Each substream is passed to \var{procedure} as a list. $n$ must be an exact,
+positive integer.
+
+\codebegin
+> (s/> '(a b c d) (s/map-window 2 values))
+((a b) (b c) (c d))
+\codeend
 
 \defineentry{s/max}
 \begin{procedure}
@@ -859,6 +918,24 @@ Table~\ref{tab:stream-ht}).
 \codebegin
 > (s/> '(-1 2 1) (s/uniq-by abs))
 (-1 2)
+\codeend
+
+\defineentry{s/zip}
+\begin{procedure}
+  \code{(s/zip \var{secondary} \var{procedure})}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/zip} procedure returns a transformer that maps stream values with
+\var{procedure}. \var{secondary} must be a list, vector, or stream. It is mapped in
+parallel, and each value is passed as the second argument to \var{procedure}.
+\var{secondary} must be at least as long as the primary stream, otherwise
+\code{\#(stream-length-mismatch \var{v})} is raised, where \var{v} is the first primary
+value that does not have a corresponding secondary value.
+
+\codebegin
+> (s/> '(a b) (s/zip '(x y z) cons))
+((a . x) (b . y))
 \codeend
 
 \section {Transformer Helpers}
