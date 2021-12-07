@@ -132,7 +132,10 @@
   (define (hashtable->stream ht)
     (vector->stream (hashtable-cells ht)))
 
-  (alias s/cells hashtable->stream)
+  (define (s/cells x)
+    (if (hashtable? x)
+        (hashtable->stream x)
+        x))
 
   (define (stream->list s)
     (let ([x (s)])
@@ -204,12 +207,12 @@
               x)
             eos))))
 
-  (define (->stream x ht?)
+  (define (->stream x)
     (cond
      [(stream? x) x]
      [(list? x) (list->stream x)]
      [(vector? x) (vector->stream x)]
-     [(and ht? (hashtable? x)) (hashtable->stream x)]
+     [(hashtable? x) (hashtable->stream x)]
      [else x]))
 
   (define (unstream v)
@@ -223,7 +226,7 @@
       (p (unstream x))))
 
   (define (require-stream x)
-    (let ([x (->stream x #t)])
+    (let ([x (->stream x)])
       (if (stream? x)
           x
           (throw `#(invalid-stream ,x)))))
@@ -235,7 +238,7 @@
     (fold-left transformer-compose values ts))
 
   (define (s/> x . ts)
-    (unstream ((transformer-compose* ts) (->stream x #f))))
+    (unstream ((transformer-compose* ts) (->stream x))))
 
   (define-syntax define-stream-transformer
     (syntax-rules ()

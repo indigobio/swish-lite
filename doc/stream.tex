@@ -59,9 +59,8 @@ zero or more transformers and then applies them to an argument.
 \returns{} see below
 
 The \code{s/>} procedure applies transformers \var{t} \ldots\ to \var{x} in order. If
-\var{x} is a list or vector, it is converted to a stream. If the final
-transformation result is a stream, it is converted to a list. If it is a stream
-box (see \code{s/stream}), it is unboxed. Otherwise, it is returned.
+\var{x} is a list, vector, or hashtable, it is converted to a stream. The final
+transformation result is passed to \code{unstream} before returning.
 
 \code{s/>} is pronounced ``stream pipe.''
 
@@ -163,8 +162,8 @@ order with \var{i} starting at 0.
 \returns{} a procedure
 
 The \code{stream-lift} procedure returns a procedure that converts its argument with
-\code{unstream} then passes it to \var{p}. It can be used to include a non-stream-aware
-procedure in a stream pipeline.
+\code{unstream} and then passes it to \var{p}. It can be used to include a
+non-stream-aware procedure in a stream pipeline.
 
 \defineentry{unstream}
 \begin{procedure}
@@ -172,9 +171,8 @@ procedure in a stream pipeline.
 \end{procedure}
 \returns{} see below
 
-The \code{unstream} procedure converts \var{x} to a non-stream value. If \var{x} is a
-stream, it is converted to a list. If \var{x} is a stream box, it is unboxed. Otherwise,
-\var{x} is returned.
+If \var{x} is a stream, it returns \code{(stream->list \var{x})}. If \var{x} is a stream
+box (see \code{s/stream}), it is unboxed. Otherwise, it returns \var{x}.
 
 \section {Transformers}
 
@@ -240,7 +238,8 @@ $v_1$ and $v_2$ have the same key \var{k}, error \code{\#(duplicate-key \var{k} 
 \antipar
 
 The \code{s/cells} variable is a transformer that returns a stream of cells
-\code{(\var{k}~.~\var{v})} of the given hashtable in no particular order.
+\code{(\var{k}~.~\var{v})} of the given hashtable in no particular order. If the input
+value is not a hashtable, it is returned.
 
 \defineentry{s/chunk}
 \begin{procedure}
@@ -562,12 +561,12 @@ The \code{s/map} procedure returns a transformer that maps stream values with
 
 \defineentry{s/map-car}
 \begin{procedure}
-  \code{(s/map-car \var{procedure})}
+  \code{(s/map-car \var{f})}
 \end{procedure}
 \returns{} a transformer
 
-The \code{s/map-car} procedure returns a transformer that maps each car in a
-stream of pairs with \var{procedure}.
+The \code{s/map-car} procedure returns a transformer that maps each pair \code{(\var{x}~.
+  \var{y})} to \code{($f(x)$~.~\var{y})}.
 
 \codebegin
 > (s/> '((a . 1) (b . 2)) (s/map-car symbol->string))
@@ -576,12 +575,12 @@ stream of pairs with \var{procedure}.
 
 \defineentry{s/map-cdr}
 \begin{procedure}
-  \code{(s/map-cdr \var{procedure})}
+  \code{(s/map-cdr \var{f})}
 \end{procedure}
 \returns{} a transformer
 
-The \code{s/map-cdr} procedure returns a transformer that maps each cdr in a
-stream of pairs with \var{procedure}.
+The \code{s/map-cdr} procedure returns a transformer that maps each pair
+\code{(\var{x}~.~\var{y})} to \code{(\var{x}~.~$f(y)$)}.
 
 \codebegin
 > (s/> '((a . 1) (b . 2)) (s/map-cdr 1+))
@@ -599,12 +598,12 @@ The \code{s/map-concat} procedure returns the transformer composition of \code{(
 
 \defineentry{s/map-cons}
 \begin{procedure}
-  \code{(s/map-cons \var{procedure})}
+  \code{(s/map-cons \var{f})}
 \end{procedure}
 \returns{} a transformer
 
-The \code{s/map-cons} procedure returns a transformer that maps each value
-\var{x} to a pair with car \var{x} and cdr \code{(\var{procedure} \var{x})}.
+The \code{s/map-cons} procedure returns a transformer that maps each value \var{x} to the
+pair \code{(\var{x}~.~$f(x)$)}.
 
 \codebegin
 > (s/> '(1 2) (s/map-cons -))
@@ -777,7 +776,7 @@ value \var{x}. It returns a list of the sorted values.
 
 The \code{s/stream} variable is a transformer that boxes its input. Using \code{s/stream}
 as the last transformer in a pipeline effectively prevents \code{s/>} from attempting to
-convert the result from stream to list, which can improve performance of nested pipelines.
+convert the result from stream to list, which can improve the performance of nested pipelines.
 
 \codebegin
 > (s/> chapters

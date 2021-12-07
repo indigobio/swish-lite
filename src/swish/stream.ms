@@ -227,7 +227,6 @@
 
 (mat hashtables ()
   (define ht (s/> '((a . 1) (b . 2)) (s/ht car cdr)))
-  (assert (hashtable? (s/> ht)))   ;; not implicitly coerced in or out
   (match-let* ([(a b) (s/> ht (s/map car))]
                [(a b) (s/> ht s/cells (s/map car))]
                [((1 . a) (2 . b)) (s/> ht (s/ht cdr car) (s/sort-by car <))]
