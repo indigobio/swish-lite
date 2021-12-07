@@ -27,6 +27,7 @@
    empty-stream
    eos
    eos?
+   hashtable->stream
    list->stream
    require-stream
    s/>
@@ -42,6 +43,7 @@
    s/count
    s/do
    s/drop
+   s/drop-last
    s/drop-while
    s/extrema
    s/extrema-by
@@ -58,7 +60,10 @@
    s/last
    s/length
    s/map
+   s/map-car
+   s/map-cdr
    s/map-concat
+   s/map-cons
    s/map-extrema
    s/map-filter
    s/map-max
@@ -73,8 +78,10 @@
    s/reverse
    s/sort
    s/sort-by
+   s/stream
    s/sum
    s/take
+   s/take-last
    s/take-while
    s/uniq
    s/uniq-by
@@ -86,8 +93,10 @@
    stream-repeat
    stream-unfold
    stream?
+   stream-lift
    transformer-compose
    transformer-compose*
+   unstream
    vector->stream
    )
   (import (chezscheme) (swish erlang))
@@ -96,6 +105,8 @@
   (define (eos? x) (eq? x eos))
   (define empty-stream (lambda () eos))
   (define nil '#{nil l7rxffkwi4beedkbqv8sqmbyi-48})
+
+  (define-record-type stream-box (opaque #t) (fields value))
 
   (define (stream . ls)
     (list->stream ls))
@@ -117,6 +128,14 @@
         (if (#3%fx< i len)
             (#3%vector-ref v i)
             eos))))
+
+  (define (hashtable->stream ht)
+    (vector->stream (hashtable-cells ht)))
+
+  (define (s/cells x)
+    (if (hashtable? x)
+        (hashtable->stream x)
+        x))
 
   (define (stream->list s)
     (let ([x (s)])
@@ -193,7 +212,18 @@
      [(stream? x) x]
      [(list? x) (list->stream x)]
      [(vector? x) (vector->stream x)]
+     [(hashtable? x) (hashtable->stream x)]
      [else x]))
+
+  (define (unstream v)
+    (cond
+     [(stream? v) (stream->list v)]
+     [(stream-box? v) (stream-box-value v)]
+     [else v]))
+
+  (define (stream-lift p)
+    (lambda (x)
+      (p (unstream x))))
 
   (define (require-stream x)
     (let ([x (->stream x)])
@@ -208,10 +238,7 @@
     (fold-left transformer-compose values ts))
 
   (define (s/> x . ts)
-    (let ([v ((transformer-compose* ts) (->stream x))])
-      (if (stream? v)
-          (stream->list v)
-          v)))
+    (unstream ((transformer-compose* ts) (->stream x))))
 
   (define-syntax define-stream-transformer
     (syntax-rules ()
@@ -285,6 +312,15 @@
   (define (s/map-filter f)
     (transformer-compose (s/map f) (s/filter)))
 
+  (define (s/map-car f)
+    (s/map (lambda (p) (cons (f (car p)) (cdr p)))))
+
+  (define (s/map-cdr f)
+    (s/map (lambda (p) (cons (car p) (f (cdr p))))))
+
+  (define (s/map-cons f)
+    (s/map (lambda (x) (cons x (f x)))))
+
   (define-stream-transformer (s/take s n)
     (unless (fixnum? n) (bad-arg 's/take n))
     (if (#3%fx<= n 0)
@@ -299,6 +335,16 @@
                       (set! n (#3%fx1- n))
                       x)))))))
 
+  (define (s/take-last n)
+    (unless (fixnum? n) (bad-arg 's/take-last n))
+    (cond
+     [(#3%fx<= n 0) (lambda (_) empty-stream)]
+     [(#3%fx= n 1) (lambda (s) (stream (s/last s)))]
+     [else
+      ;; assuming the number of values to take is small relative to the stream, it's just as fast to
+      ;; double reverse as to use a sliding window.
+      (transformer-compose* (list s/reverse (s/take n) s/reverse))]))
+
   (define-stream-transformer (s/drop s n)
     (unless (fixnum? n) (bad-arg 's/drop n))
     (if (#3%fx<= n 0)
@@ -307,6 +353,54 @@
           (if (or (eos? x) (#3%fxzero? n))
               s
               (lp (#3%fx1- n) (s))))))
+
+  (define-stream-transformer (s/drop-last s n)
+    ;; assuming the number of values to drop is small relative to the stream, it's faster to use a
+    ;; sliding window than to double reverse.
+    (unless (fixnum? n) (bad-arg 's/drop-last n))
+    (if (#3%fx<= n 0)
+        s
+        (let ([ls '()] [last '()] [len 0])
+          (lambda ()
+            (let lp ([x (s)])
+              (if (eos? x)
+                  eos
+                  (call-with-values
+                    (lambda () (window-add! ls last len n x))
+                    (case-lambda
+                     [() (lp (s))]
+                     [(v) v]))))))))
+
+  ;; Maintains a sliding window of at least one value. Once the window is full, adding a value to
+  ;; the tail emits the head.
+  (define-syntax window-add!
+    (syntax-rules ()
+      ;; ls: first pair or null
+      ;; last: last pair or null
+      ;; len: current length
+      ;; max: window length
+      ;; in: value to add
+      [(_ ls last len max in)
+       (cond
+        [(null? ls)
+         (let ([p (list in)])
+           (set! ls p)
+           (set! last p)
+           (set! len 1)
+           (values))]
+        [(= len max)
+         (let ([v (car ls)]
+               [last* (list in)])
+           (set-cdr! last last*)
+           (set! last last*)
+           (set! ls (cdr ls))
+           (values v))]
+        [else
+         (let ([last* (list in)])
+           (set-cdr! last last*)
+           (set! last last*)
+           (set! len (1+ len))
+           (values))])]))
 
   (define-stream-transformer (s/take-while s f)
     (lambda ()
@@ -379,10 +473,10 @@
                        eos
                        (let* ([k fx]
                               [c (hashtable-cell (ensure-ht k) k #f)])
-                         (if (cdr c)
+                         (if (#3%cdr c)
                              (lp)
                              (begin
-                               (set-cdr! c #t)
+                               (#3%set-cdr! c #t)
                                x))))))))))]))
 
   (define s/uniq
@@ -417,9 +511,9 @@
                      (let* ([k fkx]
                             [c (hashtable-cell (ensure-ht k) k nil)])
                        (let ([v fvx])
-                         (if (eq? (cdr c) nil)
+                         (if (eq? (#3%cdr c) nil)
                              (begin
-                               (set-cdr! c v)
+                               (#3%set-cdr! c v)
                                (lp))
                              (throw `#(duplicate-key ,k ,(cdr c) ,v)))))))))))]))
 
@@ -453,7 +547,7 @@
                        ht)
                      (let* ([k fkx]
                             [c (hashtable-cell (ensure-ht k) k '())])
-                       (set-cdr! c (cons fvx (cdr c)))
+                       (#3%set-cdr! c (cons fvx (#3%cdr c)))
                        (lp))))))))]))
 
   (define s/group-by
@@ -481,10 +575,6 @@
      [(string? k) (make-hashtable string-hash string=?)]
      [(symbol? k) (make-hashtable symbol-hash eq?)]
      [else (make-hashtable equal-hash equal?)]))
-
-  (define s/cells
-    (lambda (ht)
-      (vector->stream (hashtable-cells ht))))
 
   (define (s/chunk-every n)
     (unless (and (fixnum? n) (positive? n)) (bad-arg 's/chunk-every n))
@@ -605,6 +695,9 @@
          [(f x) (lp)]
          [else #f]))))
 
+  (define (s/stream x)
+    (make-stream-box x))
+
   (define-stream-transformer (s/sum s)
     (let lp ([sum 0])
       (let ([x (s)])
@@ -716,6 +809,7 @@
        [(stream? x) (sort lt (stream->list x))]
        [(list? x) (sort lt x)]
        [(vector? x) (vector->list (vector-sort lt x))]
+       [(hashtable? x) (vector->list (vector-sort lt (hashtable-cells x)))]
        [else (throw `#(invalid-stream ,x))])))
 
   (define (s/sort-by f lt)

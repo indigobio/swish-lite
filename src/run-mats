@@ -1,21 +1,4 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")"
-scheme -q <<EOF
-(reset-handler abort)
-(import (swish mat))
-(if (for-all values
-      (map run-mats-from-file
-        '(
-          "swish/cli.ms"
-          "swish/erlang.ms"
-          "swish/html.ms"
-          "swish/json.ms"
-          "swish/meta.ms"
-          "swish/pregexp.ms"
-          "swish/stream.ms"
-          "swish/string-utils.ms"
-          )))
-    (exit 0)
-    (exit 1))
-EOF
+scheme -q --script run-mats.ss "$@"

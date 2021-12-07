@@ -59,8 +59,8 @@ zero or more transformers and then applies them to an argument.
 \returns{} see below
 
 The \code{s/>} procedure applies transformers \var{t} \ldots\ to \var{x} in order. If
-\var{x} is a list or vector, it is converted to a stream. If the final transformation
-result is a stream, it is converted to a list. Otherwise, it is returned.
+\var{x} is a list, vector, or hashtable, it is converted to a stream. The final
+transformation result is passed to \code{unstream} before returning.
 
 \code{s/>} is pronounced ``stream pipe.''
 
@@ -89,6 +89,15 @@ order.
 
 The \code{vector->stream} procedure returns a stream containing the values in
 \var{vector}, in order.
+
+\defineentry{hashtable->stream}
+\begin{procedure}
+  \code{(hashtable->stream \var{hashtable})}
+\end{procedure}
+\returns{} a stream
+
+The \code{hashtable->stream} procedure returns a stream containing the cells of
+\var{hashtable} in no particular order.
 
 \defineentry{stream->list}
 \begin{procedure}
@@ -145,6 +154,25 @@ order with \var{i} starting at 0.
 > (stream->list (stream-repeat 5 values))
 (0 1 2 3 4)
 \codeend
+
+\defineentry{stream-lift}
+\begin{procedure}
+  \code{(stream-lift \var{p})}
+\end{procedure}
+\returns{} a procedure
+
+The \code{stream-lift} procedure returns a procedure that converts its argument with
+\code{unstream} and then passes it to \var{p}. It can be used to include a
+non-stream-aware procedure in a stream pipeline.
+
+\defineentry{unstream}
+\begin{procedure}
+  \code{(unstream \var{x})}
+\end{procedure}
+\returns{} see below
+
+If \var{x} is a stream, it returns \code{(stream->list \var{x})}. If \var{x} is a stream
+box (see \code{s/stream}), it is unboxed. Otherwise, it returns \var{x}.
 
 \section {Transformers}
 
@@ -210,7 +238,8 @@ $v_1$ and $v_2$ have the same key \var{k}, error \code{\#(duplicate-key \var{k} 
 \antipar
 
 The \code{s/cells} variable is a transformer that returns a stream of cells
-\code{(\var{k}~.~\var{v})} of the given hashtable in no particular order.
+\code{(\var{k}~.~\var{v})} of the given hashtable in no particular order. If the input
+value is not a hashtable, it is returned.
 
 \defineentry{s/chunk}
 \begin{procedure}
@@ -312,6 +341,17 @@ The \code{s/drop} procedure returns a transformer that returns the $n^\textrm{th
 a stream. $n$ must be an exact integer. If $n$ is negative, it returns the input stream
 unchanged. If $n$ is greater than or equal to the length of the stream, it returns the
 empty stream.
+
+\defineentry{s/drop-last}
+\begin{procedure}
+  \code{(s/drop-last $n$)}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/drop-last} procedure returns a transformer that returns a stream containing
+all but the last $n$ values in a finite input stream. $n$ must be an exact integer. If $n$
+is negative, it returns the input stream unchanged. If $n$ is greater than or equal to the
+length of the stream, it returns the empty stream.
 
 \defineentry{s/drop-while}
 \begin{procedure}
@@ -519,6 +559,34 @@ finite stream.
 The \code{s/map} procedure returns a transformer that maps stream values with
 \var{procedure}.
 
+\defineentry{s/map-car}
+\begin{procedure}
+  \code{(s/map-car \var{f})}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/map-car} procedure returns a transformer that maps each pair \code{(\var{x}~.
+  \var{y})} to \code{($f(x)$~.~\var{y})}.
+
+\codebegin
+> (s/> '((a . 1) (b . 2)) (s/map-car symbol->string))
+(("a" . 1) ("b" . 2))
+\codeend
+
+\defineentry{s/map-cdr}
+\begin{procedure}
+  \code{(s/map-cdr \var{f})}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/map-cdr} procedure returns a transformer that maps each pair
+\code{(\var{x}~.~\var{y})} to \code{(\var{x}~.~$f(y)$)}.
+
+\codebegin
+> (s/> '((a . 1) (b . 2)) (s/map-cdr 1+))
+((a . 2) (b . 3))
+\codeend
+
 \defineentry{s/map-concat}
 \begin{procedure}
   \code{(s/map-concat \var{procedure})}
@@ -527,6 +595,20 @@ The \code{s/map} procedure returns a transformer that maps stream values with
 
 The \code{s/map-concat} procedure returns the transformer composition of \code{(s/map
   \var{procedure})} and \code{s/concat}.
+
+\defineentry{s/map-cons}
+\begin{procedure}
+  \code{(s/map-cons \var{f})}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/map-cons} procedure returns a transformer that maps each value \var{x} to the
+pair \code{(\var{x}~.~$f(x)$)}.
+
+\codebegin
+> (s/> '(1 2) (s/map-cons -))
+((1 . -1) (2 . -2))
+\codeend
 
 \defineentry{s/map-extrema}
 \begin{procedure}
@@ -686,6 +768,29 @@ value \var{x}. It returns a list of the sorted values.
 (1 -2 -3 4)
 \codeend
 
+\defineentry{s/stream}
+\begin{variable}
+  \code{s/stream}
+\end{variable}
+\antipar
+
+The \code{s/stream} variable is a transformer that boxes its input. Using \code{s/stream}
+as the last transformer in a pipeline effectively prevents \code{s/>} from attempting to
+convert the result from stream to list, which can improve the performance of nested pipelines.
+
+\codebegin
+> (s/> chapters
+    (s/map-concat
+     (lambda (c)
+       (s/> (chapter-sections c)
+         (s/map (lambda (s) (list (chapter-name c) s)))
+         s/stream))))
+(("Erlang Embedding" "Introduction")
+ ("Erlang Embedding" "Tuples")
+ ("Stream Library" "Introduction")
+ ("Stream Library" "Transformers"))
+\codeend
+
 \defineentry{s/sum}
 \begin{variable}
   \code{s/sum}
@@ -703,6 +808,17 @@ stream.
 
 The \code{s/take} procedure returns a transformer that limits a stream to the first $n$
 values. $n$ must be an exact integer. If $n$ is negative, it returns the empty stream.
+
+\defineentry{s/take-last}
+\begin{procedure}
+  \code{(s/take-last $n$)}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/take-last} procedure returns a transformer that returns a stream containing
+the last $n$ values in a finite input stream. $n$ must be an exact integer. If $n$ is
+negative, it returns the empty stream. If $n$ is greater than or equal to the length of
+the stream, it returns the input stream unchanged.
 
 \defineentry{s/take-while}
 \begin{procedure}
@@ -735,7 +851,7 @@ appropriate for the first key is created (see Table~\ref{tab:stream-ht}).
 
 The \code{s/uniq-by} procedure returns a transformer that filters out all but the first
 instance of each value \var{x} that duplicates \code{(\var{procedure} \var{x})},
-preserving order.  Duplicates are determined by hash function \var{hash} and equivalence
+preserving order. Duplicates are determined by hash function \var{hash} and equivalence
 function \var{equiv?}, as would be passed to \code{make-hashtable}. If \var{hash} and
 \var{equiv?} are not provided, a hashtable appropriate for the first key is created (see
 Table~\ref{tab:stream-ht}).
@@ -844,8 +960,9 @@ the values of \var{stream}.
 
 The \code{require-stream} procedure returns \var{x} if it is a stream. If \var{x} is a
 list, \code{require-stream} returns \code{(list->stream \var{x})}. If \var{x} is a vector,
-it returns \code{(vector->stream \var{x})}. Otherwise, error \code{\#(invalid-stream
-  \var{x})} is raised.
+it returns \code{(vector->stream \var{x})}. If \var{x} is a hashtable, it returns
+\code{(hashtable->stream \var{x})}. Otherwise, error \code{\#(invalid-stream \var{x})} is
+raised.
 
 \defineentry{transformer-compose}
 \begin{procedure}

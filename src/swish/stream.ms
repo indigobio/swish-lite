@@ -164,11 +164,9 @@
                                             (s/sort-by car string<?))]
                [(("a" 1 3) ("b" 2)) (s/> '(("a" . 1) ("b" . 2) ("a" . 3))
                                       (s/ht* car cdr)
-                                      s/cells
                                       (s/sort-by car string<?))]
                [(("a" . -1) ("b" . -2)) (s/> '(("a" . 1) ("b" . 2))
                                           (s/ht car (lambda (x) (- (cdr x))))
-                                          s/cells
                                           (s/sort-by car string<?))]
                [`(catch #(duplicate-key "a" 1 2))
                 (try (s/> '(("a" . 1) ("A" . 2))
@@ -185,6 +183,21 @@
                [((2 1) (2)) (s/> '(2 1 2) (s/chunk2 <=))]
                [((2 3 4) (3 2 1) (2 3 4)) (s/> '(2 3 4 3 2 1 2 3 4) (s/chunk2 <=))]
                [((3 2 1) (2 3 4) (3 2 1)) (s/> '(3 2 1 2 3 4 3 2 1) (s/chunk2 <=))]
+               [(1 2 3) (s/> '(1 2 3) (s/drop-last 0))]
+               [(1 2) (s/> '(1 2 3) (s/drop-last 1))]
+               [(1) (s/> '(1 2 3) (s/drop-last 2))]
+               [() (s/> '(1 2 3) (s/drop-last 3))]
+               [() (s/> '(1 2 3) (s/drop-last 4))]
+               [() (s/> '() (s/drop-last 4))]
+               [() (s/> '(1 2 3) (s/take-last 0))]
+               [(3) (s/> '(1 2 3) (s/take-last 1))]
+               [(2 3) (s/> '(1 2 3) (s/take-last 2))]
+               [(1 2 3) (s/> '(1 2 3) (s/take-last 3))]
+               [(1 2 3) (s/> '(1 2 3) (s/take-last 4))]
+               [() (s/> '() (s/take-last 4))]
+               [(("a" . 1) ("b" . 2)) (s/> '((a . 1) (b . 2)) (s/map-car symbol->string))]
+               [((a . 2) (b . 3)) (s/> '((a . 1) (b . 2)) (s/map-cdr 1+))]
+               [((1 . -1) (2 . -2)) (s/> '(1 2) (s/map-cons -))]
                )
     'ok))
 
@@ -209,6 +222,14 @@
                [(,@a ,@b) (s/> (list a b a) (s/uniq))]
                [("a" "b") (s/> (list "a" "b" "a") (s/uniq))]
                [(1.1 2.2) (s/> (list 1.1 2.2 1.1) (s/uniq))]
+               )
+    'ok))
+
+(mat hashtables ()
+  (define ht (s/> '((a . 1) (b . 2)) (s/ht car cdr)))
+  (match-let* ([(a b) (s/> ht (s/map car))]
+               [(a b) (s/> ht s/cells (s/map car))]
+               [((1 . a) (2 . b)) (s/> ht (s/ht cdr car) (s/sort-by car <))]
                )
     'ok))
 
@@ -276,4 +297,10 @@
                [(2 3 4) (s/> '#(1 2 3) (s/map 1+))]
                [1 (s/> (cons 1 2) car)]
                )
+    (assert (procedure? (s/> (stream 1) s/stream)))
+    'ok))
+
+(mat stream-lift ()
+  (match-let* ([(3 2 1) (s/> '(1 2 3) (stream-lift reverse))]
+               [(1 2 3) (unstream (stream 1 2 3))])
     'ok))
