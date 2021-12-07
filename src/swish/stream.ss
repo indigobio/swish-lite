@@ -60,7 +60,10 @@
    s/last
    s/length
    s/map
+   s/map-car
+   s/map-cdr
    s/map-concat
+   s/map-cons
    s/map-extrema
    s/map-filter
    s/map-max
@@ -305,6 +308,15 @@
 
   (define (s/map-filter f)
     (transformer-compose (s/map f) (s/filter)))
+
+  (define (s/map-car f)
+    (s/map (lambda (p) (cons (f (car p)) (cdr p)))))
+
+  (define (s/map-cdr f)
+    (s/map (lambda (p) (cons (car p) (f (cdr p))))))
+
+  (define (s/map-cons f)
+    (s/map (lambda (x) (cons x (f x)))))
 
   (define-stream-transformer (s/take s n)
     (unless (fixnum? n) (bad-arg 's/take n))

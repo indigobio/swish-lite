@@ -559,6 +559,34 @@ finite stream.
 The \code{s/map} procedure returns a transformer that maps stream values with
 \var{procedure}.
 
+\defineentry{s/map-car}
+\begin{procedure}
+  \code{(s/map-car \var{procedure})}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/map-car} procedure returns a transformer that maps each car in a
+stream of pairs with \var{procedure}.
+
+\codebegin
+> (s/> '((a . 1) (b . 2)) (s/map-car symbol->string))
+(("a" . 1) ("b" . 2))
+\codeend
+
+\defineentry{s/map-cdr}
+\begin{procedure}
+  \code{(s/map-cdr \var{procedure})}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/map-cdr} procedure returns a transformer that maps each cdr in a
+stream of pairs with \var{procedure}.
+
+\codebegin
+> (s/> '((a . 1) (b . 2)) (s/map-cdr 1+))
+((a . 2) (b . 3))
+\codeend
+
 \defineentry{s/map-concat}
 \begin{procedure}
   \code{(s/map-concat \var{procedure})}
@@ -567,6 +595,20 @@ The \code{s/map} procedure returns a transformer that maps stream values with
 
 The \code{s/map-concat} procedure returns the transformer composition of \code{(s/map
   \var{procedure})} and \code{s/concat}.
+
+\defineentry{s/map-cons}
+\begin{procedure}
+  \code{(s/map-cons \var{procedure})}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/map-cons} procedure returns a transformer that maps each value
+\var{x} to a pair with car \var{x} and cdr \code{(\var{procedure} \var{x})}.
+
+\codebegin
+> (s/> '(1 2) (s/map-cons -))
+((1 . -1) (2 . -2))
+\codeend
 
 \defineentry{s/map-extrema}
 \begin{procedure}
