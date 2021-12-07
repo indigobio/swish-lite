@@ -61,7 +61,7 @@ zero or more transformers and then applies them to an argument.
 The \code{s/>} procedure applies transformers \var{t} \ldots\ to \var{x} in order. If
 \var{x} is a list or vector, it is converted to a stream. If the final
 transformation result is a stream, it is converted to a list. If it is a stream
-box (see \ref{sec:s/stream}), it is unboxed. Otherwise, it is returned.
+box (see \code{s/stream}), it is unboxed. Otherwise, it is returned.
 
 \code{s/>} is pronounced ``stream pipe.''
 
@@ -98,7 +98,7 @@ The \code{vector->stream} procedure returns a stream containing the values in
 \returns{} a stream
 
 The \code{hashtable->stream} procedure returns a stream containing the cells of
-\var{hashtable}.
+\var{hashtable} in no particular order.
 
 \defineentry{stream->list}
 \begin{procedure}
@@ -173,7 +173,8 @@ procedure in a stream pipeline.
 \returns{} see below
 
 The \code{unstream} procedure converts \var{x} to a non-stream value. If \var{x} is a
-stream, it is converted to a list. If the argument is a stream box, it is unboxed.
+stream, it is converted to a list. If \var{x} is a stream box, it is unboxed. Otherwise,
+\var{x} is returned.
 
 \section {Transformers}
 
@@ -768,7 +769,7 @@ value \var{x}. It returns a list of the sorted values.
 (1 -2 -3 4)
 \codeend
 
-\defineentry{s/stream}\label{sec:s/stream}
+\defineentry{s/stream}
 \begin{variable}
   \code{s/stream}
 \end{variable}
@@ -851,7 +852,7 @@ appropriate for the first key is created (see Table~\ref{tab:stream-ht}).
 
 The \code{s/uniq-by} procedure returns a transformer that filters out all but the first
 instance of each value \var{x} that duplicates \code{(\var{procedure} \var{x})},
-preserving order.  Duplicates are determined by hash function \var{hash} and equivalence
+preserving order. Duplicates are determined by hash function \var{hash} and equivalence
 function \var{equiv?}, as would be passed to \code{make-hashtable}. If \var{hash} and
 \var{equiv?} are not provided, a hashtable appropriate for the first key is created (see
 Table~\ref{tab:stream-ht}).

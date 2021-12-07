@@ -337,7 +337,10 @@
     (cond
      [(#3%fx<= n 0) (lambda (_) empty-stream)]
      [(#3%fx= n 1) (lambda (s) (stream (s/last s)))]
-     [else (transformer-compose* (list s/reverse (s/take n) s/reverse))]))
+     [else
+      ;; assuming the number of values to take is small relative to the stream, it's just as fast to
+      ;; double reverse as to use a sliding window.
+      (transformer-compose* (list s/reverse (s/take n) s/reverse))]))
 
   (define-stream-transformer (s/drop s n)
     (unless (fixnum? n) (bad-arg 's/drop n))
@@ -349,6 +352,8 @@
               (lp (#3%fx1- n) (s))))))
 
   (define-stream-transformer (s/drop-last s n)
+    ;; assuming the number of values to drop is small relative to the stream, it's faster to use a
+    ;; sliding window than to double reverse.
     (unless (fixnum? n) (bad-arg 's/drop-last n))
     (if (#3%fx<= n 0)
         s
@@ -363,35 +368,36 @@
                      [() (lp (s))]
                      [(v) v]))))))))
 
-  ;; Maintains a sliding window. Once the window is full, adding a value to the tail emits the
-  ;; head.
+  ;; Maintains a sliding window of at least one value. Once the window is full, adding a value to
+  ;; the tail emits the head.
   (define-syntax window-add!
     (syntax-rules ()
+      ;; ls: first pair or null
+      ;; last: last pair or null
+      ;; len: current length
+      ;; max: window length
+      ;; in: value to add
       [(_ ls last len max in)
-       (let ()
-         (define-syntax add
-           (syntax-rules ()
-             [(_)
-              (let ([last* (list in)])
-                (set-cdr! last last*)
-                (set! last last*)
-                (set! len (1+ len)))]))
-         (cond
-          [(null? ls)
-           (let ([p (list in)])
-             (set! ls p)
-             (set! last p)
-             (set! len 1))
-           (values)]
-          [(= len max)
-           (let ([v (car ls)])
-             (add)
-             (set! ls (cdr ls))
-             (set! len (1- len))
-             (values v))]
-          [else
-           (add)
-           (values)]))]))
+       (cond
+        [(null? ls)
+         (let ([p (list in)])
+           (set! ls p)
+           (set! last p)
+           (set! len 1)
+           (values))]
+        [(= len max)
+         (let ([v (car ls)]
+               [last* (list in)])
+           (set-cdr! last last*)
+           (set! last last*)
+           (set! ls (cdr ls))
+           (values v))]
+        [else
+         (let ([last* (list in)])
+           (set-cdr! last last*)
+           (set! last last*)
+           (set! len (1+ len))
+           (values))])]))
 
   (define-stream-transformer (s/take-while s f)
     (lambda ()
