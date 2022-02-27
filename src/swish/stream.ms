@@ -321,3 +321,60 @@
                [(0 1 1 2 3 5 8 13) (s/> (fibs) (s/take 8))]
                )
     'ok))
+
+(mat stream-search ()
+  (define (basis-combinations ls)
+    (if (<= (length ls) 2)
+        (stream ls)
+        (stream-search
+         (lambda (flip _)
+           (let generate ([ls ls] [require-head? #t])
+             (let ([x (car ls)] [rest (cdr ls)])
+               (cond
+                [(null? rest) ls]
+                [(or require-head? (flip))
+                 (cons x (generate rest #f))]
+                [else (generate rest #t)])))))))
+
+  ;; returns a stream of lists of (row . col)
+  (define (queens n)
+    (define (attack? queens row col)
+      (exists (lambda (q) (= (abs (- row (car q))) (abs (- col (cdr q))))) queens))
+    (stream-search
+     (lambda (flip fail)
+       (let next-row ([queens '()] [row 0] [cols (iota n)])
+         (if (null? cols)
+             (reverse queens)
+             (let next-col ([choices cols])
+               (if (null? choices)
+                   (fail)
+                   (let ([col (car choices)])
+                     (if (and (not (attack? queens row col)) (flip))
+                         (next-row (cons (cons row col) queens) (+ row 1) (remq col cols))
+                         (next-col (cdr choices)))))))))))
+
+  ;; prints a (row . col) list
+  #;
+  (define (print-board qs)
+    (let ([n (length qs)])
+      (newline)
+      (for-each
+       (lambda (q)
+         (do ([i 0 (+ i 1)]) [(= i n)]
+           (if (= i (cdr q))
+               (printf "Q ")
+               (printf "· ")))
+         (newline))
+       qs)))
+
+  (match-let* ([() (stream->list (stream-search (lambda (_ fail) (fail))))]
+               [(((0 1 2 3 4) (0 1 2 3 4 5 6 7 8 9))
+                 ((0 1 2 4) (0 1 2 3 4 5 6 7 9))
+                 ((0 1 3 4) (0 1 2 3 4 5 6 8 9))
+                 ((0 2 3 4) (0 1 2 3 4 5 7 8 9)))
+                (s/> (basis-combinations (iota 5))
+                  (s/zip (basis-combinations (iota 10)) list)
+                  (s/take 4))]
+               [92 (s/> (queens 8) s/length)]
+               )
+    'ok))

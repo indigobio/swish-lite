@@ -95,6 +95,7 @@
    stream-cons*
    stream-for-each
    stream-repeat
+   stream-search
    stream-unfold
    stream-yield
    stream?
@@ -256,6 +257,25 @@
   (define (stream-lift p)
     (lambda (x)
       (p (unstream x))))
+
+  (define (stream-search start)
+    (define return #f)
+    (define stack '())
+    (define (flip)
+      (call/cc
+       (lambda (k)
+         (set! stack (cons k stack))
+         #t)))
+    (define (fail)
+      (if (null? stack)
+          eos
+          (let ([k (car stack)])
+            (set! stack (cdr stack))
+            (k #f))))
+    (define (go)
+      (set! go fail)
+      (return (start flip fail)))
+    (lambda () (mark/cc return (go))))
 
   (define (require-stream x)
     (let ([x (->stream x)])
