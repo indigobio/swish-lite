@@ -204,29 +204,22 @@ evaluation of \code{(yield \var{x})} emits value \var{x}.
 (0 1 1 2 3 5 8 13 21 34)
 \codeend
 
-
-\defineentry{stream-search}
+\defineentry{stream-search-lifo}
 \begin{procedure}
-  \code{(stream-search \var{procedure})}
+  \code{(stream-search-lifo \var{procedure})}
 \end{procedure}
 \returns{} a stream
 
-The \code{stream-search} procedure returns a stream of values returned from
+The \code{stream-search-lifo} procedure returns a stream of values returned from
 \var{procedure}. It calls \var{procedure} once with two arguments, \var{flip} and
-\var{fail}.
+\var{fail}. \var{flip} is a procedure of zero arguments that captures its continuation and
+returns \code{\#t}. \var{fail} is a procedure of zero arguments that returns \code{\#f} to
+the most recently captured \var{flip} continuation that hasn't yet been invoked. If no
+such continuation exists, the stream is terminated. \var{fail} is called implicitly when
+\var{procedure} has returned and another stream value is requested.
 
-\var{flip} is a procedure of zero or one arguments that captures its continuation, adds it
-to a queue, and returns true. If passed the symbol \code{fifo}, the continuation is added
-to the front of the queue (the default). If passed the symbol \code{lifo}, it is added to
-the end of the queue.
-
-\var{fail} is a procedure of zero arguments that pops the continuation at the front of the
-queue and returns false to it. If the queue is empty, the stream is terminated. \var{fail}
-is called implicitly when \var{procedure} has returned and another stream value is
-requested.
-
-\code{stream-search} can be used to search a solution space and return a stream of
-solutions as they are found.
+\code{stream-search-lifo} can be used to search a solution space depth-first and return a
+stream of solutions as they are found.
 
 \codebegin
 > (define (bits n)
@@ -267,10 +260,13 @@ solutions as they are found.
                (printf "· ")))
          (newline))
        qs)))
+\codeend
 
+\begin{samepage}
+\codebegin
 > (s/> (queens 8) (s/take 1) (s/do print-board))
 
-Q · · · · · · · 
+Q · · · · · · ·
 · · · · Q · · · 
 · · · · · · · Q 
 · · · · · Q · · 
@@ -279,6 +275,24 @@ Q · · · · · · ·
 · Q · · · · · · 
 · · · Q · · · · 
 \codeend
+\end{samepage}
+
+\defineentry{stream-search-fifo}
+\begin{procedure}
+  \code{(stream-search-fifo \var{procedure})}
+\end{procedure}
+\returns{} a stream
+
+The \code{stream-search-fifo} procedure returns a stream of values returned from
+\var{procedure}. It calls \var{procedure} once with two arguments, \var{flip} and
+\var{fail}. \var{flip} is a procedure of zero arguments that captures its continuation and
+returns \code{\#t}. \var{fail} is a procedure of zero arguments that returns \code{\#f} to
+the least recently captured \var{flip} continuation that hasn't yet been invoked. If no
+such continuation exists, the stream is terminated. \var{fail} is called implicitly when
+\var{procedure} has returned and another stream value is requested.
+
+\code{stream-search-fifo} can be used to search a solution space breadth-first and return
+a stream of solutions as they are found.
 
 \codebegin
 > (define (shortest-sum-paths n tree)
@@ -295,7 +309,7 @@ Q · · · · · · ·
                (if (null? cs)
                    (fail)
                    (let ([c (car cs)])
-                     (if (flip 'lifo)
+                     (if (flip)
                          (next-child (cdr cs))
                          (cons (value x) (next-level c (+ sum (value c)))))))))))))
 > (define tree

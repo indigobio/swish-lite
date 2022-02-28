@@ -338,11 +338,11 @@
                )
     'ok))
 
-(mat stream-search ()
+(mat stream-search-lifo ()
   (define (basis-combinations ls)
     (if (<= (length ls) 2)
         (stream ls)
-        (stream-search
+        (stream-search-lifo
          (lambda (flip _)
            (let generate ([ls ls] [require-head? #t])
              (let ([x (car ls)] [rest (cdr ls)])
@@ -356,7 +356,7 @@
   (define (queens n)
     (define (attack? queens row col)
       (exists (lambda (q) (= (abs (- row (car q))) (abs (- col (cdr q))))) queens))
-    (stream-search
+    (stream-search-lifo
      (lambda (flip fail)
        (let next-row ([queens '()] [row 0] [cols (iota n)])
          (if (null? cols)
@@ -383,12 +383,26 @@
          (newline))
        qs)))
 
+
+  (match-let* ([() (stream->list (stream-search-lifo (lambda (_ fail) (fail))))]
+               [(((0 1 2 3 4) (0 1 2 3 4 5 6 7 8 9))
+                 ((0 1 2 4) (0 1 2 3 4 5 6 7 9))
+                 ((0 1 3 4) (0 1 2 3 4 5 6 8 9))
+                 ((0 2 3 4) (0 1 2 3 4 5 7 8 9)))
+                (s/> (basis-combinations (iota 5))
+                  (s/zip (basis-combinations (iota 10)) list)
+                  (s/take 4))]
+               [92 (s/> (queens 8) s/length)]
+               )
+    'ok))
+
+(mat stream-search-fifo ()
   (define (shortest-sum-paths n tree)
     (define (leaf? x)
       (null? (cdr x)))
     (alias value car)
     (alias children cdr)
-    (stream-search
+    (stream-search-fifo
      (lambda (flip fail)
        (let next-level ([x tree] [sum (value tree)])
          (if (leaf? x)
@@ -397,7 +411,7 @@
                (if (null? cs)
                    (fail)
                    (let ([c (car cs)])
-                     (if (flip 'lifo)
+                     (if (flip)
                          (next-child (cdr cs))
                          (cons (value x) (next-level c (+ sum (value c)))))))))))))
 
@@ -415,15 +429,7 @@
         (1)))
       (4)))
 
-  (match-let* ([() (stream->list (stream-search (lambda (_ fail) (fail))))]
-               [(((0 1 2 3 4) (0 1 2 3 4 5 6 7 8 9))
-                 ((0 1 2 4) (0 1 2 3 4 5 6 7 9))
-                 ((0 1 3 4) (0 1 2 3 4 5 6 8 9))
-                 ((0 2 3 4) (0 1 2 3 4 5 7 8 9)))
-                (s/> (basis-combinations (iota 5))
-                  (s/zip (basis-combinations (iota 10)) list)
-                  (s/take 4))]
-               [92 (s/> (queens 8) s/length)]
+  (match-let* ([() (stream->list (stream-search-fifo (lambda (_ fail) (fail))))]
                [((1 4) (1 5 -1) (1 1 2 1) (1 1 1 1 1))
                 (stream->list (shortest-sum-paths 5 tree))]
                [((1 6))

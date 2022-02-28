@@ -95,7 +95,8 @@
    stream-cons*
    stream-for-each
    stream-repeat
-   stream-search
+   stream-search-fifo
+   stream-search-lifo
    stream-unfold
    stream-yield
    stream?
@@ -258,20 +259,14 @@
     (lambda (x)
       (p (unstream x))))
 
-  (define (stream-search start)
+  (define (stream-search-lifo start)
     (define return #f)
     (define stack '())
-    (define flip
-      (case-lambda
-       [() (flip 'fifo)]
-       [(type)
-        (call/cc
-         (lambda (k)
-           (case type
-             [fifo (set! stack (cons k stack))]
-             [lifo (set! stack (reverse (cons k (reverse stack))))]
-             [else (bad-arg 'flip type)])
-           #t))]))
+    (define (flip)
+      (call/cc
+       (lambda (k)
+         (set! stack (cons k stack))
+         #t)))
     (define (fail)
       (if (null? stack)
           (return eos)
@@ -282,6 +277,48 @@
       (set! go fail)
       (return (start flip fail)))
     (lambda () (mark/cc return (go))))
+
+  (define (stream-search-fifo start)
+    (define return #f)
+    (define queue (make-queue))
+    (define (flip)
+      (call/cc
+       (lambda (k)
+         (enqueue! queue k)
+         #t)))
+    (define (fail)
+      (if (queue-empty? queue)
+          (return eos)
+          ((dequeue! queue) #f)))
+    (define (go)
+      (set! go fail)
+      (return (start flip fail)))
+    (lambda () (mark/cc return (go))))
+
+  (define (make-queue)
+    (cons '() #f))
+
+  (define (enqueue! q x)
+    (let ([h (car q)] [t (cdr q)] [p (list x)])
+      (if t
+          (begin
+            (set-cdr! t p)
+            (set-cdr! q p))
+          (begin
+            (set-car! q p)
+            (set-cdr! q p)))))
+
+  (define (dequeue! q)
+    (let ([h (car q)] [t (cdr q)])
+      (unless t (bad-arg 'dequeue! q))
+      (let ([x (car h)] [h (cdr h)])
+        (set-car! q h)
+        (when (null? h)
+          (set-cdr! q #f))
+        x)))
+
+  (define (queue-empty? q)
+    (not (cdr q)))
 
   (define (require-stream x)
     (let ([x (->stream x)])
