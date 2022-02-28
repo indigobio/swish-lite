@@ -261,14 +261,20 @@
   (define (stream-search start)
     (define return #f)
     (define stack '())
-    (define (flip)
-      (call/cc
-       (lambda (k)
-         (set! stack (cons k stack))
-         #t)))
+    (define flip
+      (case-lambda
+       [() (flip 'fifo)]
+       [(type)
+        (call/cc
+         (lambda (k)
+           (case type
+             [fifo (set! stack (cons k stack))]
+             [lifo (set! stack (reverse (cons k (reverse stack))))]
+             [else (bad-arg 'flip type)])
+           #t))]))
     (define (fail)
       (if (null? stack)
-          eos
+          (return eos)
           (let ([k (car stack)])
             (set! stack (cdr stack))
             (k #f))))

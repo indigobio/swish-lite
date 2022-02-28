@@ -204,19 +204,6 @@ evaluation of \code{(yield \var{x})} emits value \var{x}.
 (0 1 1 2 3 5 8 13 21 34)
 \codeend
 
-\codebegin
-> (define (odd-leaves tree)
-    (stream-yield
-     (let search ([x tree])
-       (cond
-        [(and (number? x) (odd? x))
-         (yield x)]
-        [(pair? x)
-         (search (car x))
-         (search (cdr x))]))))
-> (stream->list (odd-leaves '((1 . 2) (3 4 5 (6 . 7)) (8))))
-(1 3 5 7)
-\codeend
 
 \defineentry{stream-search}
 \begin{procedure}
@@ -226,10 +213,17 @@ evaluation of \code{(yield \var{x})} emits value \var{x}.
 
 The \code{stream-search} procedure returns a stream of values returned from
 \var{procedure}. It calls \var{procedure} once with two arguments, \var{flip} and
-\var{fail}. \var{flip} is a procedure of zero arguments that captures its continuation and
-returns true. \var{fail} is a procedure of zero arguments that returns false to the most
-recently captured \var{flip} continuation that hasn't yet been invoked. \var{fail} is
-called implicitly when \var{procedure} has returned and another stream value is requested.
+\var{fail}.
+
+\var{flip} is a procedure of zero or one arguments that captures its continuation, adds it
+to a queue, and returns true. If passed the symbol \code{fifo}, the continuation is added
+to the front of the queue (the default). If passed the symbol \code{lifo}, it is added to
+the end of the queue.
+
+\var{fail} is a procedure of zero arguments that pops the continuation at the front of the
+queue and returns false to it. If the queue is empty, the stream is terminated. \var{fail}
+is called implicitly when \var{procedure} has returned and another stream value is
+requested.
 
 \code{stream-search} can be used to search a solution space and return a stream of
 solutions as they are found.
@@ -247,19 +241,80 @@ solutions as they are found.
 \codeend
 
 \codebegin
-> (define (odd-leaves tree)
+> (define (queens n)
+    (define (attack? queens row col)
+      (exists (lambda (q) (= (abs (- row (car q))) (abs (- col (cdr q))))) queens))
     (stream-search
      (lambda (flip fail)
-       (let search ([x tree])
-         (cond
-          [(and (number? x) (odd? x)) x]
-          [(pair? x)
-           (if (flip)
-               (search (car x))
-               (search (cdr x)))]
-          [else (fail)])))))
-> (stream->list (odd-leaves '((1 . 2) (3 4 5 (6 . 7)) (8))))
-(1 3 5 7)
+       (let next-row ([queens '()] [row 0] [cols (iota n)])
+         (if (null? cols)
+             (reverse queens)
+             (let next-col ([choices cols])
+               (if (null? choices)
+                   (fail)
+                   (let ([col (car choices)])
+                     (if (and (not (attack? queens row col)) (flip))
+                         (next-row (cons (cons row col) queens) (+ row 1) (remq col cols))
+                         (next-col (cdr choices)))))))))))
+> (define (print-board qs)
+    (let ([n (length qs)])
+      (newline)
+      (for-each
+       (lambda (q)
+         (do ([i 0 (+ i 1)]) [(= i n)]
+           (if (= i (cdr q))
+               (printf "Q ")
+               (printf "· ")))
+         (newline))
+       qs)))
+
+> (s/> (queens 8) (s/take 1) (s/do print-board))
+
+Q · · · · · · · 
+· · · · Q · · · 
+· · · · · · · Q 
+· · · · · Q · · 
+· · Q · · · · · 
+· · · · · · Q · 
+· Q · · · · · · 
+· · · Q · · · · 
+\codeend
+
+\codebegin
+> (define (shortest-sum-paths n tree)
+    (define (leaf? x)
+      (null? (cdr x)))
+    (alias value car)
+    (alias children cdr)
+    (stream-search
+     (lambda (flip fail)
+       (let next-level ([x tree] [sum (value tree)])
+         (if (leaf? x)
+             (if (= sum n) x (fail))
+             (let next-child ([cs (children x)])
+               (if (null? cs)
+                   (fail)
+                   (let ([c (car cs)])
+                     (if (flip 'lifo)
+                         (next-child (cdr cs))
+                         (cons (value x) (next-level c (+ sum (value c)))))))))))))
+> (define tree
+    '(1
+      (1
+       (1
+        (1
+         (1))))
+      (5
+       (-1))
+      (6)
+      (1
+       (2
+        (1)))
+      (4)))
+> (stream->list (shortest-sum-paths 5 tree))
+((1 4) (1 5 -1) (1 1 2 1) (1 1 1 1 1))
+> (stream->list (shortest-sum-paths 7 tree))
+((1 6))
 \codeend
 
 \section {Transformers}

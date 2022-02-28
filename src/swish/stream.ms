@@ -317,8 +317,24 @@
      (let lp ([a 0] [b 1])
        (yield a)
        (lp b (+ a b)))))
+
+  (define (queens n)
+    (define (attack? queens row col)
+      (exists (lambda (q) (= (abs (- row (car q))) (abs (- col (cdr q))))) queens))
+    (stream-yield
+     (let next-row ([queens '()] [row 0] [cols (iota n)])
+       (if (null? cols)
+           (yield (reverse queens))
+           (let next-col ([choices cols])
+             (unless (null? choices)
+               (let ([col (car choices)])
+                 (when (not (attack? queens row col))
+                   (next-row (cons (cons row col) queens) (+ row 1) (remq col cols)))
+                 (next-col (cdr choices)))))))))
+
   (match-let* ([() (stream->list (stream-yield))]
                [(0 1 1 2 3 5 8 13) (s/> (fibs) (s/take 8))]
+               [92 (s/> (queens 8) s/length)]
                )
     'ok))
 
@@ -367,6 +383,38 @@
          (newline))
        qs)))
 
+  (define (shortest-sum-paths n tree)
+    (define (leaf? x)
+      (null? (cdr x)))
+    (alias value car)
+    (alias children cdr)
+    (stream-search
+     (lambda (flip fail)
+       (let next-level ([x tree] [sum (value tree)])
+         (if (leaf? x)
+             (if (= sum n) x (fail))
+             (let next-child ([cs (children x)])
+               (if (null? cs)
+                   (fail)
+                   (let ([c (car cs)])
+                     (if (flip 'lifo)
+                         (next-child (cdr cs))
+                         (cons (value x) (next-level c (+ sum (value c)))))))))))))
+
+  (define tree
+    '(1
+      (1
+       (1
+        (1
+         (1))))
+      (5
+       (-1))
+      (6)
+      (1
+       (2
+        (1)))
+      (4)))
+
   (match-let* ([() (stream->list (stream-search (lambda (_ fail) (fail))))]
                [(((0 1 2 3 4) (0 1 2 3 4 5 6 7 8 9))
                  ((0 1 2 4) (0 1 2 3 4 5 6 7 9))
@@ -376,5 +424,11 @@
                   (s/zip (basis-combinations (iota 10)) list)
                   (s/take 4))]
                [92 (s/> (queens 8) s/length)]
+               [((1 4) (1 5 -1) (1 1 2 1) (1 1 1 1 1))
+                (stream->list (shortest-sum-paths 5 tree))]
+               [((1 6))
+                (stream->list (shortest-sum-paths 7 tree))]
+               [()
+                (stream->list (shortest-sum-paths 8 tree))]
                )
     'ok))
