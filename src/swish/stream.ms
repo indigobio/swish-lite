@@ -226,9 +226,10 @@
     'ok))
 
 (mat hashtables ()
+  (define (symbol<? s1 s2) (string<? (symbol->string s1) (symbol->string s2)))
   (define ht (s/> '((a . 1) (b . 2)) (s/ht car cdr)))
-  (match-let* ([(a b) (s/> ht (s/map car))]
-               [(a b) (s/> ht s/cells (s/map car))]
+  (match-let* ([(a b) (s/> ht (s/map car) (s/sort symbol<?))]
+               [(a b) (s/> ht s/cells (s/map car) (s/sort symbol<?))]
                [((1 . a) (2 . b)) (s/> ht (s/ht cdr car) (s/sort-by car <))]
                )
     'ok))

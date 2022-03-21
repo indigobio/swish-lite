@@ -382,8 +382,8 @@
          (let ([,v input])
            (if ,_
                (let ([,x (,vector-ref ,@v 0)])
-                 (if (,even? ,@x) ,@x ,reject))
-               ,@reject)))
+                 (if (,even? ,@x) ,@x ,_))
+               ,_)))
        ;; single body expression, has guard
        (expand/optimize '(match input [#(,x) (guard (even? x)) x]))]
       [(begin
@@ -393,8 +393,8 @@
                (let ([,x (,vector-ref ,@v 0)])
                  (if (,even? ,@x)
                      (begin (foo) ,@x)
-                     ,reject))
-               ,@reject)))
+                     ,_))
+               ,_)))
        (expand/optimize '(match input [#(,x) (guard (even? x)) (foo) x]))])
      'ok))
   )
