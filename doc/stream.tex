@@ -108,6 +108,15 @@ The \code{hashtable->stream} procedure returns a stream containing the cells of
 The \code{stream->list} procedure returns a list containing the values in a finite
 \var{stream}, in order.
 
+\defineentry{stream->vector}
+\begin{procedure}
+  \code{(stream->vector \var{stream})}
+\end{procedure}
+\returns{} a vector
+
+The \code{stream->vector} procedure returns a vector containing the values in a finite
+\var{stream}, in order.
+
 \defineentry{stream-unfold}
 \begin{procedure}
   \code{(stream-unfold \var{procedure} \var{state})}
