@@ -9,13 +9,13 @@ Engine](https://github.com/indigobio/swish).
 
 ## Linux
 
-- Chez Scheme 9.5.4 or 9.5.6
+- Chez Scheme 9.5.8
 - graphviz, texlive, texlive-latex-recommended, and texlive-latex-extra packages for
   building the documentation
 
 ## Mac
 
-- Chez Scheme 9.5.4 or 9.5.6
+- Chez Scheme 9.5.8
 - dot (can be installed through homebrew using `brew install graphviz`)
 - pdflatex (can be installed through homebrew using `brew cask install mactex`)
 - Latin Modern fonts from LaTeX (can be installed with Font Book from a location like
@@ -23,7 +23,7 @@ Engine](https://github.com/indigobio/swish).
 
 ## Windows
 
-- Chez Scheme 9.5.4 or 9.5.6
+- Chez Scheme 9.5.8
 - Cygwin or MinGW/MSYS with bash, git, graphviz, grep, perl, texlive, GNU make, etc.
 - Put scheme in PATH.
 
