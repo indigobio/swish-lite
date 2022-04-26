@@ -1,0 +1,97 @@
+% Copyright 2022 Indigo BioAutomation, Inc.
+%
+% Permission is hereby granted, free of charge, to any person
+% obtaining a copy of this software and associated documentation files
+% (the "Software"), to deal in the Software without restriction,
+% including without limitation the rights to use, copy, modify, merge,
+% publish, distribute, sublicense, and/or sell copies of the Software,
+% and to permit persons to whom the Software is furnished to do so,
+% subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be
+% included in all copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+% EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+% MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+% NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+% BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+% ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+% CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+% SOFTWARE.
+
+\chapter {Heap Library}\label{chap:heap}
+
+\section {Introduction}
+
+A \emph{heap}\index{heap} is a tree-based data structure in which no node is less than its
+parent according to a given node-comparison function. Heaps are often used to implement
+priority queues efficiently.
+
+This implementation uses a binary tree stored in a vector \var{a} such that $a[0]$ is a
+minimal element, and $a[i]$ has children $a[2i+1]$ and $a[2i+2]$. When the vector is full,
+its size is doubled, and when it is less than one quarter full, its size is halved. This
+technique provides $O(\log{n})$ average performance for insert and delete operations.
+
+\section {Programming Interface}
+
+\defineentry{make-heap}
+\begin{procedure}
+  \code{(make-heap \var{value<?} \opt{\var{min-size}})}
+\end{procedure}
+\returns{} a heap
+
+The \code{make-heap} procedure creates an empty heap that uses the \var{value<?} procedure
+to compare two values. \code{(\var{value<?} \var{a} \var{b})} should return true if and
+only if \var{a} is less than \var{b}. The optional \var{min-size} argument specifies the
+minimum vector size and must be a fixnum greater than 2. It defaults to 3.
+
+\defineentry{heap?}
+\begin{procedure}
+  \code{(heap? \var{x})}
+\end{procedure}
+\returns{} \code{\#t} if \var{x} is a heap, \code{\#f} otherwise
+
+\defineentry{heap-delete-min!}
+\begin{procedure}
+  \code{(heap-delete-min! \var{h})}
+\end{procedure}
+\returns{} a minimal element of heap \var{h}
+
+The \code{heap-delete-min!} procedure deletes a minimal element of heap \var{h} and
+returns it. If \var{h} is empty, exception \code{heap-empty} is raised.
+
+\defineentry{heap-insert!}
+\begin{procedure}
+  \code{(heap-insert! \var{h} \var{x})}
+\end{procedure}
+\returns{} unspecified
+
+The \code{heap-insert!} procedure inserts element \var{x} into heap \var{h}.
+
+\defineentry{heap-min}
+\begin{procedure}
+  \code{(heap-min \var{h})}
+\end{procedure}
+\returns{} a minimal element of heap \var{h}
+
+The \code{heap-min} procedure returns a minimal element of heap \var{h}. If \var{h} is
+empty, exception \code{heap-empty} is raised.
+
+\defineentry{heap-min-size}
+\begin{procedure}
+  \code{(heap-min-size \var{h})}
+\end{procedure}
+\returns{} the minimum vector size of heap \var{h}
+
+\defineentry{heap-size}
+\begin{procedure}
+  \code{(heap-size \var{h})}
+\end{procedure}
+\returns{} the number of elements in heap \var{h}
+
+\defineentry{heap-value<?}
+\begin{procedure}
+  \code{(heap-value<? \var{h})}
+\end{procedure}
+\returns{} the \var{value<?} procedure of heap \var{h}
