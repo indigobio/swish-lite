@@ -6,6 +6,7 @@
             '(
               "swish/cli.ms"
               "swish/erlang.ms"
+              "swish/heap.ms"
               "swish/html.ms"
               "swish/json.ms"
               "swish/meta.ms"
