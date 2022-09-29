@@ -53,7 +53,7 @@
     (syntax-rules ()
       [(_ x $ht (key val) ...)
        (let ([ht $ht])
-         (hashtable-set! ht (parse-key key x) val)
+         (symbol-hashtable-set! ht (parse-key key x) val)
          ...
          ht)]))
 
@@ -295,36 +295,23 @@
       (define (rd ip)
         (let ([c (next-non-ws ip)])
           (cond
-           [(eqv? c #\t)
-            (expect-char #\r ip)
-            (expect-char #\u ip)
-            (expect-char #\e ip)
-            #t]
-           [(eqv? c #\f)
-            (expect-char #\a ip)
-            (expect-char #\l ip)
-            (expect-char #\s ip)
-            (expect-char #\e ip)
-            #f]
-           [(eqv? c #\n)
-            (expect-char #\u ip)
-            (expect-char #\l ip)
-            (expect-char #\l ip)
-            #\nul]
            [(eqv? c #\") (read-string ip buffer)]
-           [(eqv? c #\[)
-            (let lp ([acc '()])
-              (let ([c (next-non-ws ip)])
-                (cond
-                 [(and (eqv? c #\]) (null? acc)) '()]
-                 [else
-                  (unread-char c ip)
-                  (let* ([acc (cons (rd ip) acc)]
-                         [c (next-non-ws ip)])
-                    (case c
-                      [(#\,) (lp acc)]
-                      [(#\]) (reverse acc)]
-                      [else (unexpected-input c ip)]))])))]
+           [(char<=? #\0 c #\9) (unread-char c ip) (read-unsigned ip)]
+           [(eqv? c #\-)
+            (let ([c (peek-char ip)])
+              (cond
+               [(eqv? c #\I)
+                (read-char ip)
+                (expect-char #\n ip)
+                (expect-char #\f ip)
+                (expect-char #\i ip)
+                (expect-char #\n ip)
+                (expect-char #\i ip)
+                (expect-char #\t ip)
+                (expect-char #\y ip)
+                -inf.0]
+               [else
+                (- (read-unsigned ip))]))]
            [(eqv? c #\{)
             (custom-inflate
              (let lp ([obj (json:make-object)])
@@ -343,8 +330,49 @@
                        [else (unexpected-input c ip)]))]
                   [(and (eqv? c #\}) (eqv? (#3%hashtable-size obj) 0)) obj]
                   [else (unexpected-input c ip)]))))]
-           [(eqv? c #\-) (- (read-unsigned ip))]
-           [else (unread-char c ip) (read-unsigned ip)])))
+           [(eqv? c #\[)
+            (let lp ([acc '()])
+              (let ([c (next-non-ws ip)])
+                (cond
+                 [(and (eqv? c #\]) (null? acc)) '()]
+                 [else
+                  (unread-char c ip)
+                  (let* ([acc (cons (rd ip) acc)]
+                         [c (next-non-ws ip)])
+                    (case c
+                      [(#\,) (lp acc)]
+                      [(#\]) (reverse acc)]
+                      [else (unexpected-input c ip)]))])))]
+           [(eqv? c #\t)
+            (expect-char #\r ip)
+            (expect-char #\u ip)
+            (expect-char #\e ip)
+            #t]
+           [(eqv? c #\f)
+            (expect-char #\a ip)
+            (expect-char #\l ip)
+            (expect-char #\s ip)
+            (expect-char #\e ip)
+            #f]
+           [(eqv? c #\n)
+            (expect-char #\u ip)
+            (expect-char #\l ip)
+            (expect-char #\l ip)
+            'null]
+           [(eqv? c #\I)
+            (expect-char #\n ip)
+            (expect-char #\f ip)
+            (expect-char #\i ip)
+            (expect-char #\n ip)
+            (expect-char #\i ip)
+            (expect-char #\t ip)
+            (expect-char #\y ip)
+            +inf.0]
+           [(eqv? c #\N)
+            (expect-char #\a ip)
+            (expect-char #\N ip)
+            +nan.0]
+           [else (unexpected-input c ip)])))
       (let ([x (seek-non-ws ip)])
         (cond
          [(eof-object? x) x]
@@ -415,12 +443,17 @@
      [(op x indent custom-write)
       (define (wr op x indent)
         (cond
+         [(string? x) (write-string x op)]
+         [(or (fixnum? x) (bignum? x)) (display-string (number->string x) op)]
+         [(flonum? x)
+          (cond
+           [(finite? x) (display-string (number->string x) op)]
+           [(eqv? x +inf.0) (display-string "Infinity" op)]
+           [(eqv? x -inf.0) (display-string "-Infinity" op)]
+           [else (display-string "NaN" op)])]
          [(eq? x #t) (display-string "true" op)]
          [(eq? x #f) (display-string "false" op)]
-         [(eqv? x #\nul) (display-string "null" op)]
-         [(string? x) (write-string x op)]
-         [(or (fixnum? x) (bignum? x) (and (flonum? x) (finite? x)))
-          (display-string (number->string x) op)]
+         [(eq? x 'null) (display-string "null" op)]
          [(custom-write op x indent wr)]
          [(null? x) (display-string "[]" op)]
          [(pair? x)
@@ -551,8 +584,8 @@
       (let ([novel (make-hashtable symbol-hash eq?)])
         (define (ok? key)
           (and (symbol? key)
-               (symbol-hashtable-ref novel key #t)
-               (begin (symbol-hashtable-set! novel key #f) #t)))
+               (#3%symbol-hashtable-ref novel key #t)
+               (begin (#3%symbol-hashtable-set! novel key #f) #t)))
         (andmap ok? keys)))
     (define (parse-clause c)
       (syntax-case c ()

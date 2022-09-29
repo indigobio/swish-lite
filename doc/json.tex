@@ -35,8 +35,9 @@
 
 \section {Introduction}
 
-The programming interface includes procedures for JavaScript Object
-Notation (JSON)~\cite{RFC7159}.
+The programming interface includes procedures for JavaScript Object Notation
+(JSON)~\cite{RFC7159}. In order to support all floating-point values, it extends the
+specification with Infinity, -Infinity, and NaN.
 
 This implementation translates JavaScript types into the following
 Scheme types:
@@ -46,7 +47,10 @@ Scheme types:
 
   \code{true} & \code{\#t} \\
   \code{false} & \code{\#f} \\
-  \code{null} & \code{\#\textbackslash nul} \\
+  \code{null} & symbol \code{null} \\
+  \code{Infinity} & \code{+inf.0} \\
+  \code{-Infinity} & \code{-inf.0} \\
+  \code{NaN} & \code{+nan.0} \\
   \var{string} & \var{string} \\
   \var{number} & \var{number} \\
   \var{array} & \var{list} \\
