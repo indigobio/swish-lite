@@ -73,9 +73,12 @@
     'ok]))
 
 (define test-objs
-  `(#(#\nul "null")
-    #(#t "true")
+  `(#(#t "true")
     #(#f "false")
+    #(null "null")
+    #(+inf.0 "Infinity")
+    #(-inf.0 "-Infinity")
+    #(+nan.0 "NaN")
     #(1 "1")
     #(3.1415 "3.1415")
     #(-1 "-1")
@@ -116,8 +119,8 @@
     #(,(json:make-object [,'foo (json:make-object [bar #t])])
       "{\"foo\":{\"bar\":true}}")
 
-    #((-123 "foo" ,(json:make-object [bar '()]) #\nul)
-      "[-123,\"foo\",{\"bar\":[]},null]")
+    #((-123 "foo" ,(json:make-object [bar '()]) #t #f null +inf.0 -inf.0 +nan.0)
+      "[-123,\"foo\",{\"bar\":[]},true,false,null,Infinity,-Infinity,NaN]")
     #(,(json:make-object [,(gensym "bar" "unique-name") 456] [#{foo lish} 789])
       "{\"#{foo lish}\":789,\"#{bar unique-name}\":456}")
     #(,(json:make-object [,(string->symbol "#{foo not-gensym") 123])
@@ -383,12 +386,12 @@
    ([#(EXIT #(bad-arg json:write -1))
      (catch (json:write (open-output-string) 12 -1))]
     [#(EXIT #(invalid-datum 1/2)) (catch (json:object->string 1/2))]
-    [#(EXIT #(invalid-datum +inf.0)) (catch (json:object->string +inf.0))]
-    [#(EXIT #(invalid-datum -inf.0)) (catch (json:object->string -inf.0))]
-    [#(EXIT #(invalid-datum +nan.0)) (catch (json:object->string +nan.0))]
     [#(EXIT unexpected-eof) (catch (json:string->object "t"))]
     [#(EXIT unexpected-eof) (catch (json:string->object "f"))]
     [#(EXIT unexpected-eof) (catch (json:string->object "n"))]
+    [#(EXIT unexpected-eof) (catch (json:string->object "Infinit"))]
+    [#(EXIT unexpected-eof) (catch (json:string->object "-I"))]
+    [#(EXIT unexpected-eof) (catch (json:string->object "Na"))]
     [#(EXIT #(unexpected-input #\, 6))
      (catch (json:string->object "{\"foo\",12}"))]
     [#(EXIT unexpected-eof) (catch (json:string->object "\""))]
