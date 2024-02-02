@@ -339,7 +339,6 @@
     (unless (fixnum? n) (bad-arg 's/take-last n))
     (cond
      [(#3%fx<= n 0) (lambda (_) empty-stream)]
-     [(#3%fx= n 1) (lambda (s) (stream (s/last s)))]
      [else
       ;; assuming the number of values to take is small relative to the stream, it's just as fast to
       ;; double reverse as to use a sliding window.
