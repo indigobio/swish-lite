@@ -26,7 +26,9 @@
    binary->utf8
    make-directory-path
    make-utf8-transcoder
+   path-absolute
    path-combine
+   path-normalize
    )
   (import
    (chezscheme)
@@ -52,6 +54,16 @@
       (eol-style none)
       (error-handling-mode replace)))
 
+  (define path-absolute
+    (case-lambda
+     [(path) (path-absolute path (current-directory))]
+     [(path base)
+      (path-normalize
+       (cond
+        [(path-absolute? path) path]
+        [(path-absolute? base) (path-combine base path)]
+        [else (path-combine (current-directory) base path)]))]))
+
   (define path-combine
     (case-lambda
      [(x y)
@@ -63,4 +75,24 @@
          [else (format "~a~c~a" x (directory-separator) y)]))]
      [(x) x]
      [(x y . rest) (apply path-combine (path-combine x y) rest)]))
+
+  (define (path-normalize path)
+    (define abs? (path-absolute? path))
+    (let lp ([tail path] [rparts '()])
+      (if (string=? tail "")
+          (if (null? rparts) "." (apply path-combine (reverse rparts)))
+          (let ([first (path-first tail)])
+            (cond
+             [(string=? "" first) (lp "" (cons tail rparts))]
+             [(string=? "." first) (lp (path-rest tail) rparts)]
+             [(string=? ".." first)
+              (lp (path-rest tail)
+                (if abs?
+                    (if (null? (cdr rparts))
+                        rparts
+                        (cdr rparts))
+                    (if (or (null? rparts) (string=? (car rparts) ".."))
+                        (cons ".." rparts)
+                        (cdr rparts))))]
+             [else (lp (path-rest tail) (cons first rparts))])))))
   )
