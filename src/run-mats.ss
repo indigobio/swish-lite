@@ -8,6 +8,7 @@
               "swish/erlang.ms"
               "swish/heap.ms"
               "swish/html.ms"
+              "swish/io.ms"
               "swish/json.ms"
               "swish/meta.ms"
               "swish/pregexp.ms"

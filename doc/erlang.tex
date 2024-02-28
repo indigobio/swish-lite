@@ -712,15 +712,35 @@ with end-of-line style \code{none} and error-handling mode
 \code{replace}.
 
 % ----------------------------------------------------------------------------
+\defineentry{path-absolute}
+\begin{procedure}
+  \code{(path-absolute \var{path} \opt{\var{base}})}
+\end{procedure}
+\returns{} a string
+
+The \code{path-absolute} procedure returns the normalized absolute path of \var{path}
+relative to the \var{base} directory, which defaults to the current directory.
+
+% ----------------------------------------------------------------------------
 \defineentry{path-combine}
 \begin{procedure}
   \code{(path-combine \var{path$_1$} \var{path$_2$} \etc{})}
 \end{procedure}
-\returns{} the string combining the paths
+\returns{} a string combining the paths
 
 The \code{path-combine} procedure appends one or more paths, inserting
 the directory-separator character between each pair of paths as
 needed.
+
+% ----------------------------------------------------------------------------
+\defineentry{path-normalize}
+\begin{procedure}
+  \code{(path-normalize \var{path})}
+\end{procedure}
+\returns{} a string with the normalized path
+
+The \code{path-normalize} procedure removes unnecessary directory separators and
+simplifies ``.'' and ``..'' components from \var{path}.
 
 % ----------------------------------------------------------------------------
 \subsection{Error Strings}
