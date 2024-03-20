@@ -5,8 +5,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-12, ubuntu-20.04, ubuntu-22.04, windows-2022]
-        chez: [v9.5.8a]
+        os: [macos-13, macos-14, ubuntu-20.04, ubuntu-22.04, windows-2022]
+        chez: [v10.0.0]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
@@ -15,9 +15,9 @@ jobs:
         working-directory: ${{ runner.temp }}
         shell: bash
         run: |
-          git clone --branch ${{ matrix.chez }} --depth 1 --quiet https://github.com/cisco/ChezScheme.git
+          git clone --filter=blob:none --branch ${{ matrix.chez }} --quiet https://github.com/cisco/ChezScheme.git
           cd ChezScheme
-          ./configure
+          ./configure --nothreads
           make
           if [ "$RUNNER_OS" = "Windows" ]
           then echo "$PWD/a6nt/bin/a6nt" >> $GITHUB_PATH

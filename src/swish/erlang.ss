@@ -153,21 +153,17 @@
             'dump-stack max-depth truncated))])))
 
   (define ($limit-stack thunk source)
-    ;; thwart cp0 and ensure source is live on the stack
-    ((call-with-values thunk $limit-stack-receiver) source))
-
-  (define $limit-stack-receiver
-    (case-lambda
-     [(x) (lambda (source) x)]
-     [xs (lambda (source) (apply values xs))]))
-
-  (define $limit-stack-box (box $limit-stack))
+    (call-with-values
+      thunk
+      (case-lambda
+       [(x) (keep-live source) x]
+       [xs (keep-live source) (apply values xs)])))
 
   (define-syntax (limit-stack x)
     (syntax-case x ()
       [(ls e0 e1 ...)
        ;; thwart cp0 and ensure $limit-stack appears on the stack
-       #`((unbox $limit-stack-box) (lambda () e0 e1 ...) #,(find-source #'ls))]))
+       #`(#%$app/no-inline $limit-stack (lambda () e0 e1 ...) #,(find-source #'ls))]))
 
   (define (limit-stack? k)
     (and (#3%$continuation? k)
@@ -281,7 +277,7 @@
       [(_) #f]))
 
   (define (bad-match v src)
-    (throw `#(bad-match ,v ,src)))
+    (#%$app/no-inline throw `#(bad-match ,v ,src)))
 
   (define extension)
   (define extensions)
