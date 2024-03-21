@@ -54,11 +54,11 @@ zero or more transformers and then applies them to an argument.
 
 \defineentry{s/>}
 \begin{procedure}
-  \code{(s/> \var{x} \var{t} \ldots)}
+  \code{(s/> \var{x} \var{t} \etc)}
 \end{procedure}
 \returns{} see below
 
-The \code{s/>} procedure applies transformers \var{t} \ldots\ to \var{x} in order. If
+The \code{s/>} procedure applies transformers \var{t} \etc\ to \var{x} in order. If
 \var{x} is a list, vector, or hashtable, it is converted to a stream. The final
 transformation result is passed to \code{unstream} before returning.
 
@@ -66,11 +66,11 @@ transformation result is passed to \code{unstream} before returning.
 
 \defineentry{stream}
 \begin{procedure}
-  \code{(stream \var{x} \ldots)}
+  \code{(stream \var{x} \etc)}
 \end{procedure}
 \returns{} a stream
 
-The \code{stream} procedure returns a stream containing values \var{x} \ldots.
+The \code{stream} procedure returns a stream containing values \var{x} \etc.
 
 \defineentry{list->stream}
 \begin{procedure}
@@ -257,7 +257,7 @@ value is not a hashtable, it is returned.
 \returns{} a transformer
 
 The \code{s/chunk} procedure returns a transformer that groups stream values into lists
-based on the return value of \var{procedure}. Consecutive values \var{v} \ldots\ for which
+based on the return value of \var{procedure}. Consecutive values \var{v} \etc\ for which
 \code{(procedure v)} returns the same value are grouped into a list. Return values are
 compared with \code{equal?}.
 
@@ -892,18 +892,18 @@ The \code{eos?} procedure returns true if and only if \var{x} is the end-of-stre
 
 \defineentry{define-stream-transformer}
 \begin{syntax}
-  \code{(define-stream-transformer (\var{name} \var{s} \var{a} \ldots) $e_1$ $e_2$ \ldots)}
+  \code{(define-stream-transformer (\var{name} \var{s} \var{a} \etc) $e_1$ $e_2$ \etc)}
 \end{syntax}
 \expandsto{} a definition
 
 The \code{define-stream-transformer} form defines a transformer or transformer constructor
-with the given \var{name} and arguments \var{a} \ldots. For each transformer input
-\var{s}, \var{s} is rebound to \code{(require-stream \var{s})} and \var{a} \ldots\ are
-rebound to \var{a} \ldots. This makes it safe for expressions $e_1$ $e_2$ \ldots\ to
-assume \var{s} is a stream and to \code{set!} \var{a} \ldots\ while preserving transformer
-semantics. Expressions $e_1$ $e_2$ \ldots\ should evaluate to the transformed stream.
+with the given \var{name} and arguments \var{a} \etc. For each transformer input
+\var{s}, \var{s} is rebound to \code{(require-stream \var{s})} and \var{a} \etc\ are
+rebound to \var{a} \etc. This makes it safe for expressions $e_1$ $e_2$ \etc\ to
+assume \var{s} is a stream and to \code{set!} \var{a} \etc\ while preserving transformer
+semantics. Expressions $e_1$ $e_2$ \etc\ should evaluate to the transformed stream.
 
-If there are one or more arguments \var{a} \ldots, \code{define-stream-transformer}
+If there are one or more arguments \var{a} \etc, \code{define-stream-transformer}
 defines a transformer constructor.
 
 \codebegin
@@ -921,7 +921,7 @@ defines a transformer constructor.
 (1 2 3)
 \codeend
 
-If there are zero arguments \var{a} \ldots, \code{define-stream-transformer} defines a
+If there are zero arguments \var{a} \etc, \code{define-stream-transformer} defines a
 transformer variable.
 
 \codebegin
@@ -954,11 +954,11 @@ values of \var{stream}.
 
 \defineentry{stream-cons*}
 \begin{procedure}
-  \code{(stream-cons* \var{x} \ldots\ \var{stream})}
+  \code{(stream-cons* \var{x} \etc\ \var{stream})}
 \end{procedure}
 \returns{} a stream
 
-The \code{stream-cons*} procedure returns a stream containing \var{x} \ldots\ followed by
+The \code{stream-cons*} procedure returns a stream containing \var{x} \etc\ followed by
 the values of \var{stream}.
 
 \defineentry{require-stream}

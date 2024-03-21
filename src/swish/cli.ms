@@ -22,7 +22,6 @@
 
 (import
  (swish cli)
- (swish imports)
  (swish mat)
  (swish testing)
  )

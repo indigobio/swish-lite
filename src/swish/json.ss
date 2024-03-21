@@ -160,7 +160,12 @@
   (define (read-string ip op)
     (let ([c (next-char ip)])
       (case c
-        [(#\") (get-output-string op)]
+        [(#\")
+         ;; We don't reset string output port's buffer via get-output-string since we will likely
+         ;; have to regrow the buffer.
+         (let ([s (substring (port-output-buffer op) 0 (port-output-index op))])
+           (set-port-output-index! op 0)
+           s)]
         [(#\\)
          (let ([c (next-char ip)])
            (case c

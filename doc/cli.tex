@@ -137,7 +137,7 @@ the complex number $0-1i$.
   \code{count} & a positive integer \\
   \code{(string \var{x})} & a string \\
   \code{(list \var{x})} & a list of one item \\
-  \code{(list \var{x} ...)} & a list of one or more items up to the
+  \code{(list \var{x} \etc)} & a list of one or more items up to the
   next argument \\
   \code{(list . \var{x})} & a list of the rest of the arguments \\
   \hline
@@ -273,8 +273,8 @@ around optional arguments. A \var{how} of \code{\#f} defaults to the
     \code{count} & \code{\#f}\\
     \code{(string \var{x})} & \str{x}\\
     \code{(list \var{x})} & \str{x}\\
-    \code{(list \var{x} ...)} & \str{x ...}\\
-    \code{(list . \var{x})} & \str{x ...}\\
+    \code{(list \var{x} \etc)} & \str{x \etc}\\
+    \code{(list . \var{x})} & \str{x \etc}\\
     \hline
   \end{tabular}
   \end{minipage}\\
@@ -351,7 +351,7 @@ The following table summarizes the parser's behavior.
   \code{(string \var{x})}
   & one
   & a string \\
-  \code{(list \var{$x_0$} \etc{} \var{$x_n$} ...)}
+  \code{(list \var{$x_0$} \etc{} \var{$x_n$} \etc)}
   & $n$ or more, up to the next option
   & a list of strings \\
   \code{(list \var{$x_0$} \etc{} \var{$x_n$} . \var{rest})}
