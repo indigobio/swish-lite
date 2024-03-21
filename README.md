@@ -1,7 +1,7 @@
 # Swish Lite
 
 Swish Lite is a set of Chez Scheme libraries based on the [Swish Concurrency
-Engine](https://github.com/indigobio/swish).
+Engine](https://github.com/becls/swish).
 
 [Documentation](https://indigobio.github.io/swish-lite/swish-lite.pdf)
 
