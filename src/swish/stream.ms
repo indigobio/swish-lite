@@ -230,12 +230,29 @@
 (mat hashtables ()
   (define (symbol<? s1 s2) (string<? (symbol->string s1) (symbol->string s2)))
   (define ht (s/> '((a . 1) (b . 2)) (s/ht car cdr)))
+  (define (evil ht)
+    (s/> ht
+      (s/map (lambda (p) (set-cdr! p #f) p))
+      (s/map (lambda (p) (cons (car p) (not (cdr p)))))
+      (s/sort-by car symbol<?)))
   (match-let* ([#t (hashtable-mutable? ht)]
                [(a b) (s/> ht (s/map car) (s/sort symbol<?))]
                [(a b) (s/> (hashtable-copy ht #f) (s/map car) (s/sort symbol<?))]
                [(a b) (s/> ht s/cells (s/map car) (s/sort symbol<?))]
                [((1 . a) (2 . b)) (s/> ht (s/ht cdr car) (s/sort-by car <))]
-               )
+               ;; The following assertions are here to prevent us from unknowingly violating
+               ;; undocumented invariants.
+               ;; When the input hashtable is mutable, cell mutations are visible in other
+               ;; transformers
+               [((a . #t) (b . #t)) (evil ht)]
+               ;; ... and in the original hashtable.
+               [((a . #f) (b . #f)) (s/> ht (s/sort-by car symbol<?))]
+               ;; When the input hashtable is immutable,
+               [,ht (hashtable-copy (s/> '((a . 1) (b . 2)) (s/ht car cdr)) #f)]
+               ;; cell mutations are visible in other transformers
+               [((a . #t) (b . #t)) (evil ht)]
+               ;; ... but not the original hashtable.
+               [((a . 1) (b . 2)) (s/> ht (s/sort-by car symbol<?))])
     'ok))
 
 (mat unfold ()
