@@ -130,7 +130,9 @@
             eos))))
 
   (define (hashtable->stream ht)
-    (vector->stream (hashtable-cells ht)))
+    (if (hashtable-mutable? ht)
+        (vector->stream (hashtable-cells ht))
+        (vector->stream (hashtable-cells (hashtable-copy ht #t)))))
 
   (define (s/cells x)
     (if (hashtable? x)

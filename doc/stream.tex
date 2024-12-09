@@ -97,7 +97,8 @@ The \code{vector->stream} procedure returns a stream containing the values in
 \returns{} a stream
 
 The \code{hashtable->stream} procedure returns a stream containing the cells of
-\var{hashtable} in no particular order.
+\var{hashtable} in no particular order. If the hashtable is immutable, a mutable copy is
+made first.
 
 \defineentry{stream->list}
 \begin{procedure}
@@ -246,9 +247,9 @@ $v_1$ and $v_2$ have the same key \var{k}, error \code{\#(duplicate-key \var{k} 
 \end{variable}
 \antipar
 
-The \code{s/cells} variable is a transformer that returns a stream of cells
-\code{(\var{k}~.~\var{v})} of the given hashtable in no particular order. If the input
-value is not a hashtable, it is returned.
+The \code{s/cells} variable is a transformer that returns a stream of cells of the given
+hashtable in no particular order. If the input value is not a hashtable, it is returned.
+If the hashtable is immutable, a mutable copy is made first.
 
 \defineentry{s/chunk}
 \begin{procedure}
