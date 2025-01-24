@@ -16,5 +16,6 @@
 *.rsx
 *.thm
 *.toc
+/oop-layout.pdf
 /scheme-coding-standard.pdf
 /swish-lite.pdf

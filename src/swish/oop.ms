@@ -1,0 +1,162 @@
+;;; Copyright 2025 Indigo BioAutomation, Inc.
+;;;
+;;; Permission is hereby granted, free of charge, to any person
+;;; obtaining a copy of this software and associated documentation
+;;; files (the "Software"), to deal in the Software without
+;;; restriction, including without limitation the rights to use, copy,
+;;; modify, merge, publish, distribute, sublicense, and/or sell copies
+;;; of the Software, and to permit persons to whom the Software is
+;;; furnished to do so, subject to the following conditions:
+;;;
+;;; The above copyright notice and this permission notice shall be
+;;; included in all copies or substantial portions of the Software.
+;;;
+;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+;;; EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+;;; MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+;;; NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+;;; HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+;;; WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+;;; DEALINGS IN THE SOFTWARE.
+
+#!chezscheme
+(import
+ (chezscheme)
+ (swish imports)
+ (swish mat)
+ (swish oop)
+ (swish testing)
+ )
+
+(mat syntax-errors ()
+  (assert-syntax-error base "invalid context for")
+  (assert-syntax-error this "invalid context for")
+  (assert-syntax-error (define-class A (parent A)) "unrecognized parent class")
+  (assert-syntax-error (lambda () (define-class A) (define-class B (parent A) (parent A)))
+    "duplicate definition")
+  (assert-syntax-error (define-class A (fields) (fields)) "duplicate definition")
+  (assert-syntax-error (define-class A (fields x)) "invalid syntax")
+  (assert-syntax-error (define-class A (fields (immutable #f))) "invalid syntax")
+  (assert-syntax-error (define-class A (fields (immutable x) (boolean y))) "invalid syntax")
+  (assert-syntax-error (define-class A (fields (mutable x) (immutable x))) "duplicate definition")
+  (assert-syntax-error (define-class A (protocol #f) (protocol #f)) "duplicate definition")
+  (assert-syntax-error (define-class A (fields (immutable x)) (method (x))) "duplicate definition")
+  (assert-syntax-error (define-class A (method (isa?))) "reserved name")
+  (assert-syntax-error (define-class A (method (x)) (virtual (x))) "duplicate definition")
+  (assert-syntax-error (define-class A (fields (immutable x)) (method (m) (set! x 0)))
+    "invalid syntax")
+  (assert-syntax-error (lambda () (define-class A) (A x (A make))) "unknown class A member")
+  (assert-syntax-error (define-class A (method (m) (this make))) "unknown class A member")
+  (assert-syntax-error (define-class A (method (m) (this x))) "unknown class A member")
+  (assert-syntax-error (define-class A (fields (immutable x)) (method (m) (base x)))
+    "no parent for")
+  (assert-syntax-error (define-class A (fields (immutable x)) (method (m) (this x 0)))
+    "incorrect number of arguments to class A field")
+  (assert-syntax-error (lambda ()
+                         (define-class A (fields (mutable x)))
+                         (define-class B (parent A) (fields (immutable x)))
+                         (A x (B make 0 1) 2)
+                         (B x (B make 0 1) 2))
+    "incorrect number of arguments to class B field")
+  (assert-syntax-error (lambda ()
+                         (define-class A (fields (mutable x)))
+                         (define-class B (parent A) (method (m) (base x 1 2)))
+                         0)
+    "incorrect number of arguments to class A field")
+  (assert-syntax-error (lambda ()
+                         (define-class A (method (m)))
+                         (A m (A make) 1))
+    "incorrect number of arguments to class A instance method")
+  (assert-syntax-error (lambda ()
+                         (define-class A)
+                         (define-class B (parent A) (method (m) (base make)))
+                         0)
+    "unknown class A member")
+  (assert-syntax-error (lambda ()
+                         (define-class A)
+                         (define-class B (parent A) (method (m) (base x)))
+                         0)
+    "unknown class A member")
+  (assert-syntax-error (lambda ()
+                         (define-class A)
+                         (A isa?))
+    "incorrect number of arguments to")
+  )
+
+(mat one-class ()
+  (define-class A
+    (fields (immutable f1) (mutable f2))
+    (method (m1) f1)
+    (method (m2) f2)
+    (method (me) this)
+    (virtual (m1 f1) `(A ,f1))
+    (virtual (m1 f1 f2) (this f2 f1) `(A ,(this f1) ,(this f2)))
+    (virtual (m2 m1) (list m1 (this m1) (m2))))
+  (match-let*
+   ([,a (A make 1 2)]
+    ["#<class A>" (format "~a" a)]
+    [#t (A isa? a)]
+    [,@a (A me a)]
+    ["Exception in me: #f is not of type #<record type A>."
+     (exit-reason->english (catch (A me #f)))]
+    [1 (A f1 a)]
+    [1 (A m1 a)]
+    [2 (A f2 a)]
+    [2 (A m2 a)]
+    [(A 12) (A m1 a 12)]
+    [(A 1 3) (A m1 a 3 0)]
+    [3 (A m2 a)]
+    [(12 1 3) (A m2 a 12)]
+    )
+   'ok))
+
+(mat hierarchy ()
+  (define-class A
+    (fields (immutable f1) (mutable f2))
+    (method (m1) `(A.m1))
+    (method (m2) `(A.m2))
+    (virtual (m1 f1) `(A.m1 ,f1))
+    (virtual (m1 f1 f2) `(A.m1 ,f1 ,f2)))
+  (define-class B
+    (parent A)
+    (fields (immutable f2) (mutable m2))
+    (method (m1) `(B.m1))
+    (method (m4 x) (base f2 x) (base f2))
+    (method (m5) (base m2))
+    (virtual (m1 m3) `(B.m1 ,(base m1 m3)))
+    (virtual (m3) (base m1)))
+  (define-class C
+    (parent B)
+    (method (m2 x y) (+ x y))
+    (virtual (f1 x y) (- x y)))
+  (match-let*
+   ([,a (A make 1 2)]
+    [1 (A f1 a)]
+    [2 (A f2 a)]
+    [-2 (begin (A f2 a -2) (A f2 a))]
+    [(A.m1) (A m1 a)]
+    [(A.m2) (A m2 a)]
+    [(A.m1 foo) (A m1 a 'foo)]
+    [(A.m1 foo bar) (A m1 a 'foo 'bar)]
+    [,b (B make 1 2 3 4)]
+    [1 (A f1 b)]
+    [2 (A f2 b)]
+    [#t (A isa? a)]
+    [#t (A isa? b)]
+    [#f (B isa? a)]
+    [#t (B isa? b)]
+    [1 (B f1 b)]
+    [3 (B f2 b)]
+    [4 (B m2 b)]
+    [(A.m1) (A m1 b)]
+    [(B.m1) (B m1 b)]
+    [(A.m1) (B m3 b)]
+    [bar (B m4 b 'bar)]
+    [(A.m2) (B m5 b)]
+    [(B.m1 (A.m1 foo)) (B m1 b 'foo)]
+    [(A.m1) (B m3 b)]
+    [,c (C make 1 2 3 4)]
+    [13 (C m2 c 10 3)]
+    [7 (C f1 c 10 3)])
+   'ok))

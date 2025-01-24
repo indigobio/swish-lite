@@ -21,6 +21,7 @@
 ;;; DEALINGS IN THE SOFTWARE.
 
 (import
+ (swish imports)
  (swish cli)
  (swish mat)
  (swish testing)

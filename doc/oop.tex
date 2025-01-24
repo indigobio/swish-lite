@@ -1,0 +1,176 @@
+% Copyright 2025 Indigo BioAutomation, Inc.
+%
+% Permission is hereby granted, free of charge, to any person
+% obtaining a copy of this software and associated documentation files
+% (the "Software"), to deal in the Software without restriction,
+% including without limitation the rights to use, copy, modify, merge,
+% publish, distribute, sublicense, and/or sell copies of the Software,
+% and to permit persons to whom the Software is furnished to do so,
+% subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be
+% included in all copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+% EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+% MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+% NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+% BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+% ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+% CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+% SOFTWARE.
+
+\newcommand{\nl}[1]{\textsf{\textit{#1}}}
+
+\chapter {OOP Library}\label{chap:oop}
+
+The \code{(swish oop)} library provides a simple object system with classes that support
+single inheritance. It extends Scheme's record system with instance and virtual instance
+methods. The virtual function table is stored in the record-type descriptor to avoid any
+extra storage in each class instance.
+
+% ----------------------------------------------------------------------------
+\defineentry{define-class}
+
+\begin{syntax}\begin{alltt}
+(define-class \var{name}
+  \opt{(parent \var{parent})}
+  \opt{(fields (\set{immutable\alt{}mutable} \var{field}) \etc)}
+  \opt{(protocol \var{protocol})}
+  (method (\var{method} \var{formal} \etc) \var{body} \etc) \etc
+  (virtual (\var{virtual} \var{formal} \etc) \var{body} \etc) \etc
+  )\strut\end{alltt}
+\end{syntax}
+\expandsto{}\begin{alltt}\antipar
+(module ((\var{name} \nl{implicit-export} \etc))
+  (meta define ctcls \nl{make-ctcls})
+  (define-syntax \var{name} (\nl{make-class-dispatcher} ctcls))
+  (define-property \var{name} \nl{class-key} ctcls)
+  (define ($\var{name}.\nl{virtual}.\nl{arity}.impl inst \var{formal} \etc)
+    (\nl{open-instance} \var{name} inst \var{body} \etc)) \etc
+  (define ($\var{name}.\nl{override}.\nl{arity}.impl inst \var{formal} \etc)
+    (\nl{open-instance} \var{name} inst \var{body} \etc)) \etc
+  (define \var{name}.rtd (\nl{make-class-rtd} \var{name}))
+  (define \var{name}.rcd
+    (make-record-constructor-descriptor \var{name}.rtd \nl{parent-rcd} \var{protocol}))
+  (define \var{name}.make (record-constructor \var{name}.rcd))
+  (define (\var{name}.\var{field} inst)
+    (\nl{record-check} '\var{field} inst \var{name}.rtd)
+    (\nl{object-ref} inst \nl{offset})) \etc
+  (define (\var{name}.\nl{mutable-field}.set! inst val)
+     (\nl{record-check} '\nl{mutable-field} inst \var{name}.rtd)
+     (\nl{record-set!} inst \nl{offset} val)) \etc
+  (define ($\var{name}.\var{method}.\nl{arity} inst \var{formal} \etc)
+    (\nl{open-instance} \var{name} inst \var{body} \etc)) \etc
+  (define (\var{name}.\var{method}.\nl{arity} inst \var{formal} \etc)
+    (\nl{record-check} '\var{method} inst \var{name}.rtd)
+    ($\var{name}.\var{method}.\nl{arity} inst \var{formal} \etc)) \etc
+  (define ($\var{name}.\nl{virtual}.\nl{arity} inst \var{formal} \etc)
+    ((\nl{object-ref} (record-rtd inst) \nl{offset}) inst \var{formal} \etc)) \etc
+  (define (\var{name}.\nl{virtual}.\nl{arity} inst \var{formal} \etc)
+    (\nl{record-check} '\nl{virtual} inst \var{name}.rtd)
+    ($\var{name}.\nl{new-virtual}.\nl{arity} inst \var{formal} \etc)) \etc
+  )\end{alltt}
+
+The \code{define-class} macro defines a class, \var{name}, a macro described in
+Figure~\ref{oop:class-name}. The optional \code{parent} clause specifies the parent
+class. The class inherits all fields and methods from its parent.
+
+Figure~\ref{oop:records} diagrams the layout of class records.
+
+\begin{figure}[p]
+  \begin{center}
+    \includegraphics{oop-layout.pdf}
+  \end{center}
+  The record-type descriptor for the class record is extended with a field for each
+  virtual method.
+  \caption{\label{oop:records}Class records}
+\end{figure}
+
+The optional \code{fields} clause specifies the set of instance fields, which defaults to
+the empty set. Within a class, no two fields may have the same name, and the set of field
+names must be disjoint from the set of method names. A field shadows any inherited field
+or method of the same name.
+
+The \code{protocol} clause specifies the instance constructor in the form used by Scheme's
+\code{define-record-type}.
+
+Each \code{method} clause specifies a non-virtual instance method, and each \code{virtual}
+clause specifies a virtual instance method. The body expressions are evaluated in
+\nl{open-instance} scope, described in Figure~\ref{oop:open-instance}. Within a class, no
+two instance methods may have the same name and arity, and the set of instance method
+names must be disjoint from the set of field names. An instance method shadows any
+inherited field of the same name. An instance method shadows---or overrides in the case of
+virtual methods---any inherited instance method of the same name and arity.
+
+No field or method may be named any of the following: \code{base}, \code{isa?},
+\code{make}, and \code{this}.
+
+\begin{figure}[p]
+The \code{define-class} macro defines a \var{name} macro that behaves according to the
+following chart, where \nl{field} includes every field and unshadowed inherited field,
+\nl{mutable-field} includes every mutable \nl{field}, and \nl{method} includes every
+instance method and unshadowed inherited instance method:
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\multicolumn{1}{l}{\textbf{syntax}} & \multicolumn{1}{l}{\textbf{returns}}\\
+\hline
+\code{(\var{name} isa?\ \var{e})} &
+ \code{(record?\ \var{e} \var{name}.rtd)}\\
+\code{(\var{name} make \var{arg} \etc)} &
+ \code{(\var{name}.make \var{arg} \etc)}\\
+\code{(\var{name} \nl{field} \var{inst})} &
+ \code{(\nl{class}.\nl{field} \var{inst})}\\
+\code{(\var{name} \nl{mutable-field} \var{inst} \var{val})} &
+ \code{(\nl{class}.\nl{mutable-field}.set! \var{inst} \var{val})}\\
+\code{(\var{name} \nl{method} \var{inst} \var{arg} \etc)} &
+ \code{(\nl{class}.\nl{method}.\nl{arity} \var{inst} \var{arg} \etc)}\\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{oop:class-name}Description of class \var{name} macro}
+\end{figure}
+
+\begin{figure}[p]
+The \nl{open-instance} macro introduces a scope with the following definitions, where
+\nl{field} includes every field and unshadowed inherited field, \nl{mutable-field}
+includes every mutable \nl{field}, \nl{method} includes every instance method and
+unshadowed inherited instance method, \nl{base-field} includes every parent-class field
+and unshadowed parent-class-inherited field, \nl{base-mutable-field} includes every
+mutable \nl{base-field}, \nl{base-nonvirt} includes every parent-class non-virtual
+instance method and unshadowed parent-class-inherited non-virtual instance method, and
+\nl{base-virtual} includes every parent-class virtual instance method and unshadowed
+parent-class-inherited virtual instance method.
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\multicolumn{1}{l}{\textbf{syntax}} & \multicolumn{1}{l}{\textbf{returns}}\\
+\hline
+\code{this} &
+  \code{inst}\\
+\code{(this \nl{field})} &
+  \code{(\nl{object-ref} inst \nl{offset})}\\
+\code{(this \nl{mutable-field} \var{val})} &
+  \code{(\nl{object-set!} inst \nl{offset} \var{val})}\\
+\code{(this \nl{method} \var{arg} \etc)} &
+  \code{(\$\nl{class}.\nl{method}.\nl{arity} inst \var{arg} \etc)}\\
+\code{(base \nl{base-field})} &
+  \code{(\nl{object-ref} inst \nl{offset})}\\
+\code{(base \nl{base-mutable-field} \var{val})} &
+  \code{(\nl{object-set!} inst \nl{offset} \var{val})}\\
+\code{(base \nl{base-nonvirt} \var{arg} \etc)} &
+  \code{(\$\nl{class}.\nl{base-nonvirt}.\nl{arity} inst \var{arg} \etc)}\\
+\code{(base \nl{base-virtual} \var{arg} \etc)} &
+  \code{(\$\nl{class}.\nl{base-virtual}.\nl{arity}.impl inst \var{arg} \etc)}\\
+\nl{field} &
+  \code{(\nl{object-ref} inst \nl{offset})}\\
+\code{(set!\ \nl{mutable-field} \var{val})} &
+  \code{(\nl{object-set!} inst \nl{offset} \var{val})}\\
+\code{(\nl{method} \var{arg} \etc)} &
+  \code{(\$\nl{class}.\nl{method}.\nl{arity} inst \var{arg} \etc)}\\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{oop:open-instance}Description of \nl{open-instance} scope}
+\end{figure}
