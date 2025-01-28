@@ -160,3 +160,36 @@
     [13 (C m2 c 10 3)]
     [7 (C f1 c 10 3)])
    'ok))
+
+(mat protocol ()
+  (define-class A
+    (fields (immutable f1) (immutable f2))
+    (protocol
+     (lambda (base)
+       (lambda ()
+         ((base) 1 2)))))
+  (define-class B
+    (parent A)
+    (fields (immutable f3) (immutable f4))
+    (protocol
+     (lambda (base)
+       (lambda (x)
+         ((base) x x)))))
+  (define-class C
+    (parent A)
+    (fields (immutable f3) (immutable f4)))
+  (match-let*
+   ([,a (A make)]
+    [1 (A f1 a)]
+    [2 (A f2 a)]
+    [,b (B make 3)]
+    [1 (B f1 b)]
+    [2 (B f2 b)]
+    [3 (B f3 b)]
+    [3 (B f4 b)]
+    [,c (C make 4 3 2 1)]
+    [4 (C f1 c)]
+    [3 (C f2 c)]
+    [2 (C f3 c)]
+    [1 (C f4 c)])
+   'ok))
