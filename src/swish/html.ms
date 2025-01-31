@@ -152,7 +152,7 @@
 (mat print-parameters ()
   (parameterize ([print-radix 16] [print-precision 3] [print-subnormal-precision #t])
     (match-let*
-     (["123456" (html->string 123456)]
-      ["10.0" (html->string 10.0)]
-      ["1e-315" (html->string 1e-315)])
+     (["<p f=\"-123456\">123456</p>" (html->string '(p (@ (f -123456)) 123456))]
+      ["<p f=\"-10.0\">10.0</p>" (html->string '(p (@ (f -10.0)) 10.0))]
+      ["<p f=\"-1e-315\">1e-315</p>" (html->string '(p (@ (f -1e-315)) 1e-315))])
      'ok)))
