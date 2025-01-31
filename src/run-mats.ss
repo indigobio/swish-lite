@@ -12,6 +12,7 @@
       (if (null? (command-line-arguments))
           '(
             "swish/cli.ms"
+            "swish/dsm.ms"
             "swish/erlang.ms"
             "swish/heap.ms"
             "swish/html.ms"

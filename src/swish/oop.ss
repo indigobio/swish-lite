@@ -27,7 +27,10 @@
    define-class
    this
    )
-  (import (chezscheme))
+  (import
+   (chezscheme)
+   (swish dsm)
+   )
 
   (define-record-type class (nongenerative)) ;; root class
 
@@ -75,33 +78,6 @@
      (immutable offset)                 ; fixnum
      (immutable impl)                   ; identifier
      ))
-
-  (define-syntax define-syntactic-monad ; from Chez Scheme's cmacros.ss
-    (syntax-rules ()
-      [(_ name formal ...)
-       (for-all identifier? #'(name formal ...))
-       (define-syntax (name x)
-         (syntax-case x (lambda define)
-           [(key lambda more-formals . body)
-            (with-implicit (key formal ...)
-              #'(lambda (formal ... . more-formals) . body))]
-           [(key define (proc-name . more-formals) . body)
-            (with-implicit (key formal ...)
-              #'(define (proc-name formal ... . more-formals) . body))]
-           [(key proc ([x e] (... ...)) arg (... ...))
-            (for-all identifier? #'(x (... ...)))
-            (with-implicit (key formal ...)
-              (for-each
-               (lambda (x)
-                 (unless (let mem ((ls #'(formal ...)))
-                           (and (not (null? ls))
-                                (or (free-identifier=? x (car ls))
-                                    (mem (cdr ls)))))
-                   (syntax-error x (format "undeclared ~s monad binding" 'name))))
-               #'(x (... ...)))
-              #'(let ([x e] (... ...))
-                  (proc formal ... arg (... ...))))]
-           [(key proc) #'(key proc ())]))]))
 
   (meta define reserved-names
     '(base isa? make this))

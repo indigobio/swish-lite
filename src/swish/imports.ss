@@ -25,6 +25,7 @@
   (import (chezscheme))
   (export
    (import
+    (swish dsm)
     (swish erlang)
     (swish errors)
     (swish html)
