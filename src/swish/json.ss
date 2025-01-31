@@ -449,10 +449,14 @@
       (define (wr op x indent)
         (cond
          [(string? x) (write-string x op)]
-         [(or (fixnum? x) (bignum? x)) (display-string (number->string x) op)]
+         [(or (fixnum? x) (bignum? x)) (fprintf op "~d" x)]
          [(flonum? x)
           (cond
-           [(finite? x) (display-string (number->string x) op)]
+           [(finite? x)
+            (let ([psp? (print-subnormal-precision)])
+              (print-subnormal-precision #f)
+              (fprintf op "~d" x)
+              (print-subnormal-precision psp?))]
            [(eqv? x +inf.0) (display-string "Infinity" op)]
            [(eqv? x -inf.0) (display-string "-Infinity" op)]
            [else (display-string "NaN" op)])]
