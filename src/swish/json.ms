@@ -545,3 +545,12 @@
   ;;   such as (foo . bar)
   ;;   in particular, we'll smash everything along that path
   )
+
+(mat print-parameters ()
+  (parameterize ([print-radix 16] [print-precision 3] [print-subnormal-precision #t])
+    (match-let*
+     (["123456" (json:object->string 123456)]
+      ["3141592653589793238462643" (json:object->string 3141592653589793238462643)]
+      ["10.0" (json:object->string 10.0)]
+      ["1e-315" (json:object->string 1e-315)])
+     'ok)))

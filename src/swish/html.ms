@@ -148,3 +148,11 @@
     '(area base br col command embed hr img input keygen link meta param
        source track wbr))
    'ok))
+
+(mat print-parameters ()
+  (parameterize ([print-radix 16] [print-precision 3] [print-subnormal-precision #t])
+    (match-let*
+     (["123456" (html->string 123456)]
+      ["10.0" (html->string 10.0)]
+      ["1e-315" (html->string 1e-315)])
+     'ok)))
