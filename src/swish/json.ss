@@ -452,11 +452,7 @@
          [(or (fixnum? x) (bignum? x)) (fprintf op "~d" x)]
          [(flonum? x)
           (cond
-           [(finite? x)
-            (let ([psp? (print-subnormal-precision)])
-              (print-subnormal-precision #f)
-              (fprintf op "~d" x)
-              (print-subnormal-precision psp?))]
+           [(finite? x) (parameterize ([print-subnormal-precision #f]) (fprintf op "~d" x))]
            [(eqv? x +inf.0) (display-string "Infinity" op)]
            [(eqv? x -inf.0) (display-string "-Infinity" op)]
            [else (display-string "NaN" op)])]
