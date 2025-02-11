@@ -95,11 +95,11 @@
     (virtual (m2 m1) (list m1 (this m1) (m2))))
   (match-let*
    ([,a (A make 1 2)]
-    ["#<class A>" (format "~a" a)]
+    ["#[A 1 2]" (parameterize ([print-gensym #f]) (format "~a" a))]
     [#t (A isa? a)]
     [,@a (A me a)]
     ["Exception in me: #f is not of type #<record type A>."
-     (exit-reason->english (catch (A me #f)))]
+     (exit-reason->english (catch (parameterize ([print-gensym #f]) (A me #f))))]
     [1 (A f1 a)]
     [1 (A m1 a)]
     [2 (A f2 a)]

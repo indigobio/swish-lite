@@ -443,12 +443,6 @@
            [(ctcls-parent ctcls) => (lambda (parent) (+ (total-field-count parent) n))]
            [else n])))
 
-      ;; This should not be placed at the end of the file because this library is only visited for
-      ;; compile-time definitions.
-      (record-writer (type-descriptor class)
-        (lambda (r p wr)
-          (fprintf p "#<class ~a>" (record-type-name (record-rtd r)))))
-
       (lambda (x)
         (syntax-case x ()
           [(_ name clause ...)
