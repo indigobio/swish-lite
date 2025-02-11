@@ -99,7 +99,7 @@
     [#t (A isa? a)]
     [,@a (A me a)]
     ["Exception in me: #f is not of type #<record type A>."
-     (exit-reason->english (catch (parameterize ([print-gensym #f]) (A me #f))))]
+     (exit-reason->english (catch (A me #f)))]
     [1 (A f1 a)]
     [1 (A m1 a)]
     [2 (A f2 a)]
