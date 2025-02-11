@@ -94,7 +94,8 @@ names must be disjoint from the set of method names. A field shadows any inherit
 or method of the same name.
 
 The \code{protocol} clause specifies the instance constructor in the form used by Scheme's
-\code{define-record-type} for record types with parents.
+\code{define-record-type} for record types with parents. A protocol is required when the
+parent class has a protocol.
 
 Each \code{method} clause specifies a non-virtual instance method, and each \code{virtual}
 clause specifies a virtual instance method. The body expressions are evaluated in
