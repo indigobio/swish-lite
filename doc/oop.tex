@@ -59,7 +59,7 @@ extra storage in each class instance.
     (\nl{object-ref} inst \nl{offset})) \etc
   (define (\var{name}.\nl{mutable-field}.set! inst val)
      (\nl{record-check} '\nl{mutable-field} inst \var{name}.rtd)
-     (\nl{record-set!} inst \nl{offset} val)) \etc
+     (\nl{object-set!} inst \nl{offset} val)) \etc
   (define ($\var{name}.\var{method}.\nl{arity} inst \var{formal} \etc)
     (\nl{open-instance} \var{name} inst \var{body} \etc)) \etc
   (define (\var{name}.\var{method}.\nl{arity} inst \var{formal} \etc)
