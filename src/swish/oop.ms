@@ -129,7 +129,9 @@
   (define-class C
     (parent B)
     (method (m2 x y) (+ x y))
-    (virtual (f1 x y) (- x y)))
+    (virtual (f1 x y) (- x y))
+    (method (f1) 'C-f1)
+    (method (g) (list (f1) (base f1))))
   (match-let*
    ([,a (A make 1 2)]
     [1 (A f1 a)]
@@ -148,6 +150,7 @@
     [#t (B isa? b)]
     [1 (B f1 b)]
     [3 (B f2 b)]
+    ;; field shadows inherited method
     [4 (B m2 b)]
     [(A.m1) (A m1 b)]
     [(B.m1) (B m1 b)]
@@ -158,8 +161,30 @@
     [(A.m1) (B m3 b)]
     [,c (C make 1 2 3 4)]
     [13 (C m2 c 10 3)]
+    ;; method f1 shadows inherited field f1
+    [(C-f1 1) (C g c)]
     [7 (C f1 c 10 3)])
-   'ok))
+   'ok)
+  (let ()
+    ;; recursive call to virtual goes through virtual table
+    (define-class A (virtual (m x) (if (zero? x) 1 (* x (m (- x 1))))))
+    (define-class B (parent A) (virtual (m x) 7) (method (m2 x) (base m x)))
+    (match-let*
+     ([,a (A make)]
+      [,b (B make)]
+      [120 (A m a 5)]
+      [7 (B m b 5)]
+      [35 (B m2 b 5)])
+     'ok))
+  (let ()
+    ;; formals shadow inherited fields
+    (define-class A (fields (immutable x)))
+    (define-class B (parent A) (method (m x) x))
+    (match-let*
+     ([,b (B make 123)]
+      [17 (B m b 17)])
+     'ok))
+  )
 
 (mat a-rose-by-any-other-name () ;; TODO rename
   (define-class A
