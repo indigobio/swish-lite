@@ -161,6 +161,31 @@
     [7 (C f1 c 10 3)])
    'ok))
 
+(mat a-rose-by-any-other-name () ;; TODO rename
+  (define-class A
+    (fields (mutable x) (mutable set!))
+    (method (dump) (list set! x)))
+  (define-class B (parent A)
+    (method (m0) (set!))
+    (method (m1) (set! (set!)))
+    (method (m2 y) (set! x y)))
+  (define f
+    (case-lambda
+     [() (list 'zero)]
+     [(a) (list 'one a)]
+     [(a b) (list 'two a b)]))
+  (match-let*
+   ([,b (B make 'b1-x f)]
+    [,expected (A dump b)]
+    [(,@f b1-x) expected]
+    [(zero) (B m0 b)]
+    [,@expected (A dump b)]
+    [(one (zero)) (B m1 b)]
+    [,@expected (A dump b)]
+    [(two b1-x 123) (B m2 b 123)])
+   'ok)
+  )
+
 (mat protocol ()
   (define-class A
     (fields (immutable f1) (immutable f2))

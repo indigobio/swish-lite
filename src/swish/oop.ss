@@ -604,23 +604,24 @@
                           [(__ what . args)
                            (identifier? #'what)
                            #'(cname #{base a36te8sh8d4jwl80hjktg92qdwn887ze} what inst . args)])
-                        (syntax-error x "no parent for")))]
-                 [immutable-field
-                  (identifier-syntax (#%$object-ref 'scheme-object inst immutable-field-offset))]
-                 ...
-                 [mutable-field
-                  (identifier-syntax
-                   [id (#%$object-ref 'scheme-object inst mutable-field-offset)]
-                   [(set! id val)
-                    (#%$object-set! 'scheme-object inst mutable-field-offset val)])]
-                 ...
-                 [method
-                  (lambda (x)
-                    (syntax-case x ()
-                      [(__ . method-args) #'(method-$id inst . method-args)]
-                      ...))]
-                 ...)
-                ((lambda formals body) . tmps))))
+                        (syntax-error x "no parent for")))])
+                (let-syntax
+                  ([immutable-field
+                    (identifier-syntax (#%$object-ref 'scheme-object inst immutable-field-offset))]
+                   ...
+                   [mutable-field
+                    (identifier-syntax
+                     [id (#%$object-ref 'scheme-object inst mutable-field-offset)]
+                     [(set! id val)
+                      (#%$object-set! 'scheme-object inst mutable-field-offset val)])]
+                   ...
+                   [method
+                    (lambda (x)
+                      (syntax-case x ()
+                        [(__ . method-args) #'(method-$id inst . method-args)]
+                        ...))]
+                   ...)
+                  ((lambda formals body) . tmps)))))
          (let ([ctcls (cte #'cname #'class)])
            (let-values ([(names defs) (hashtable-entries (ctcls-names ctcls))])
              ($o gather ([immutable-fields '()] [mutable-fields '()] [methods '()]) 0))))]))
