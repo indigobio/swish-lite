@@ -186,14 +186,17 @@
      'ok))
   )
 
-(mat a-rose-by-any-other-name () ;; TODO rename
+(mat name-shadowing ()
   (define-class A
     (fields (mutable x) (mutable set!))
     (method (dump) (list set! x)))
   (define-class B (parent A)
+    (fields (immutable lambda))
+    (protocol (lambda (base) (lambda (x set!) ((base x set!) 'lambda))))
     (method (m0) (set!))
     (method (m1) (set! (set!)))
-    (method (m2 y) (set! x y)))
+    (method (m2 y) (set! x y))
+    (method (m3) (let ([r lambda]) (import (scheme)) ((lambda () r)))))
   (define f
     (case-lambda
      [() (list 'zero)]
@@ -207,7 +210,8 @@
     [,@expected (A dump b)]
     [(one (zero)) (B m1 b)]
     [,@expected (A dump b)]
-    [(two b1-x 123) (B m2 b 123)])
+    [(two b1-x 123) (B m2 b 123)]
+    [lambda (B m3 b)])
    'ok)
   )
 
