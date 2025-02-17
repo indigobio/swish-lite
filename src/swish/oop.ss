@@ -41,8 +41,8 @@
      (immutable name)                   ; symbol
      (immutable parent)                 ; #f | ctcls
      (immutable rtd)                    ; identifier
-     (immutable rcd)                    ; identifier
-     (immutable make)                   ; identifier
+     (immutable rcd)                    ; #f | identifier
+     (immutable make)                   ; #f | identifier
      (immutable fields)                 ; (ctfield ...)
      (immutable methods)                ; (ctmethod ...)
      (immutable virtuals)               ; (ctvirtual ...)
@@ -126,7 +126,7 @@
             names))))
 
   (meta define root-ctcls
-    (make-ctcls 'class #f #`(quote #,(type-descriptor class)) #'#f #f '() '() '() '()))
+    (make-ctcls 'class #f #`(quote #,(type-descriptor class)) #f #f '() '() '() '()))
 
   (meta define (make-class-dispatcher ctcls)
 
