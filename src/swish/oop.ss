@@ -117,7 +117,12 @@
       (make-class-rtd^2 name (if parent (ctcls-rtd^2 parent) #!base-rtd) virtuals)
       (if parent
           (hashtable-copy (ctcls-names parent) #t)
-          (make-symbol-hashtable))))
+          (let ([names (make-symbol-hashtable)])
+            (symbol-hashtable-set! names 'isa? '(isa?))
+            (symbol-hashtable-set! names 'make '(make))
+            (symbol-hashtable-set! names '#{this eufjl7k5jwfpg31mjs5680p9d} '(this))
+            (symbol-hashtable-set! names '#{base a36te8sh8d4jwl80hjktg92qdwn887ze} '(base))
+            names))))
 
   (meta define root-ctcls
     (make-ctcls 'class #f #`(quote #,(type-descriptor class)) #'#f #f '() '() '() '()))
@@ -134,7 +139,23 @@
              (lambda (setter) (cons setter args))]
             [else (bad-arity what ctcls "field")])]
           [(method) (cons (ctmethod-id (find-arity (cdr def) arity what ctcls)) args)]
-          [(special) ((cdr def) what args)])))
+          [(isa?)
+           (syntax-case args ()
+             [(e) #`(#3%record? e #,(ctcls-rtd ctcls))]
+             [else (bad-arity what)])]
+          [(make) (cons (ctcls-make ctcls) args)]
+          [(this)
+           (let ([what (car args)] [args (cdr args)])
+             (expand-this-def ctcls
+               (or (symbol-hashtable-ref names (syntax->datum what) #f)
+                   (unknown-member what ctcls))
+               what args))]
+          [(base)
+           (let ([what (car args)] [args (cdr args)] [parent (ctcls-parent ctcls)])
+             (expand-base-def parent
+               (or (symbol-hashtable-ref (ctcls-names parent) (syntax->datum what) #f)
+                   (unknown-member what parent))
+               what args))])))
 
     (define (expand-this-def ctcls def what args)
       (let ([arity (length args)])
@@ -194,8 +215,6 @@
     (define (insert! name updater)
       (symbol-hashtable-update! names name updater #f))
 
-    (define (special proc) (lambda (prev) (cons 'special proc)))
-
     (define (field f) (lambda (prev) (cons 'field f)))
 
     (define (method m)
@@ -215,35 +234,6 @@
       (for-each insert-instance-method! (ctcls-methods ctcls))
       (for-each insert-instance-method! (ctcls-virtuals ctcls))
       (for-each insert-instance-method! (ctcls-overrides ctcls)))
-
-    ;; specials
-    (insert! 'isa?
-      (special
-       (lambda (what args)
-         (syntax-case args ()
-           [(e) #`(#3%record? e #,(ctcls-rtd ctcls))]
-           [else (bad-arity what)]))))
-    (insert! 'make
-      (special
-       (lambda (what args)
-         (cons (ctcls-make ctcls) args))))
-    (insert! '#{this eufjl7k5jwfpg31mjs5680p9d}
-      (special
-       (lambda (what args)
-         (let ([what (car args)] [args (cdr args)])
-           (expand-this-def ctcls
-             (or (symbol-hashtable-ref names (syntax->datum what) #f)
-                 (unknown-member what ctcls))
-             what args)))))
-    (insert! '#{base a36te8sh8d4jwl80hjktg92qdwn887ze}
-      (special
-       (let ([parent (ctcls-parent ctcls)])
-         (lambda (what args)
-           (let ([what (car args)] [args (cdr args)])
-             (expand-base-def parent
-               (or (symbol-hashtable-ref (ctcls-names parent) (syntax->datum what) #f)
-                   (unknown-member what parent))
-               what args))))))
 
     (lambda (x)
       (syntax-case x ()
