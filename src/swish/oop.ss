@@ -106,11 +106,11 @@
   (meta define (make-class-rtd^2 name parent-rtd^2 virtuals)
     (if (null? virtuals)
         parent-rtd^2
-        (#%$make-record-type #!base-rtd parent-rtd^2 (format "~a.rtd^2" name)
+        (make-record-type parent-rtd^2 (format "~a.rtd^2" name)
           (map (lambda (v)
                  (list 'immutable
                    (string->symbol (format "~a.~d" (ctmethod-name v) (ctmethod-arity v)))))
-            virtuals) #f #f)))
+            virtuals))))
 
   (meta define (make-ctcls name parent rtd rcd make fields methods virtuals overrides)
     ($make-ctcls name parent rtd rcd make fields methods virtuals overrides
