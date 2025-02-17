@@ -48,7 +48,8 @@
      (immutable virtuals)               ; (ctvirtual ...)
      (immutable overrides)              ; (ctvirtual ...)
      (immutable rtd^2)                  ; rtd of rtd
-     (immutable names)   ; name -> (field . ctfield) | (method ctmethod ...) | (special . procedure)
+     (immutable names)                  ; name -> (field . ctfield) | (method ctmethod ...) |
+                                        ; (isa?) | (make) | (this) | (base)
      ))
 
   (meta define-record-type ctfield
@@ -548,7 +549,7 @@
          (define-syntactic-monad $o
            ctcls                ; ctcls
            names                ; #(name ...)
-           defs                 ; #({(field . ctfield) | (method ctmethod ...) | (special . _)} ...)
+           defs                 ; #({(field . ctfield) | (method ctmethod ...) | (_)} ...)
            immutable-fields     ; ((fname . offset) ...)
            mutable-fields       ; ((fname . offset) ...)
            methods              ; ((mname ($id arg ...) ...) ...)
