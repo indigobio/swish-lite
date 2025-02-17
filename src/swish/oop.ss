@@ -193,12 +193,14 @@
           [else (unknown-member what parent)])))
 
     (define (find-arity ls arity what ctcls)
-      (if (null? ls)
-          (bad-arity what ctcls "instance method")
-          (let ([m (car ls)])
-            (if (= (+ (ctmethod-arity m) 1) arity)
-                m
-                (find-arity (cdr ls) arity what ctcls)))))
+      (let ([method-arity (- arity 1)])
+        (let lp ([ls ls])
+          (if (null? ls)
+              (bad-arity what ctcls "instance method")
+              (let ([m (car ls)])
+                (if (= (ctmethod-arity m) method-arity)
+                    m
+                    (lp (cdr ls))))))))
 
     (define bad-arity
       (case-lambda
