@@ -319,7 +319,7 @@
                 [(kw:method (mname formal ...) body ...)
                  (and (eq? (datum kw:method) 'method) (for-all identifier? #'(mname formal ...)))
                  (let ([arity (length #'(formal ...))])
-                   (check-name ht #'mname 'method arity clause)
+                   (add-name! ht #'mname 'method arity clause)
                    ($p parse
                      ([methods
                        (cons (list #'mname arity (new-id "$" name "." #'mname "." arity)
@@ -329,7 +329,7 @@
                 [(kw:virtual (mname formal ...) body ...)
                  (and (eq? (datum kw:virtual) 'virtual) (for-all identifier? #'(mname formal ...)))
                  (let ([arity (length #'(formal ...))])
-                   (check-name ht #'mname 'method arity clause)
+                   (add-name! ht #'mname 'method arity clause)
                    ($p parse
                      ([virtuals
                        (cons (list #'mname arity (new-id "$" name "." #'mname "." arity ".impl")
@@ -342,11 +342,11 @@
           [(ftype fname)
            (and (memq (datum ftype) '(immutable mutable)) (identifier? #'fname))
            (begin
-             (check-name ht #'fname 'field #f fspec)
+             (add-name! ht #'fname 'field #f fspec)
              (list #'fname (new-id name "." #'fname)
                (and (eq? (datum ftype) 'mutable) (new-id name "." #'fname ".set!"))))]))
 
-      (define (check-name ht id type arity clause)
+      (define (add-name! ht id type arity clause)
         (let* ([name (syntax->datum id)]
                [cell (symbol-hashtable-cell ht name #f)]
                [val (cdr cell)])
