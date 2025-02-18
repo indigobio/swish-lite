@@ -260,6 +260,15 @@
     [(two b1-x 123) (B m2 b 123)]
     [lambda (B m3 b)])
    'ok)
+  (let ()
+    (define-class ABC
+      (fields (immutable x))
+      (method (m set! this base)
+        (list this (set! x base))))
+    (match-let*
+     ([,this (ABC make 1)]
+      [(that #(1 tenor)) (ABC m this vector 'that 'tenor)])
+     'ok))
   )
 
 (mat protocol ()
