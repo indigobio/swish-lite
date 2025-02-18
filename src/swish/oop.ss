@@ -279,7 +279,7 @@
             (let ([parent (or parent root-ctcls)]
                   [all-virtuals (reverse virtuals)])
               ($l layout-virtuals
-                ([fields (layout-fields (or fields '()) (total-field-count parent))]
+                ([fields (if fields (layout-fields fields (total-field-count parent)) '())]
                  [protocol (or protocol #'#f)]
                  [methods (reverse methods)]
                  [virtuals '()]
