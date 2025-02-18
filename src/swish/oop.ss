@@ -131,76 +131,72 @@
   (meta define (make-class-dispatcher ctcls)
 
     (define (expand-class-def ctcls def what args)
-      (let ([arity (length args)])
-        (case (car def)
-          [(field)
+      (case (car def)
+        [(field)
+         (let ([arity (- (length args) 1)])
            (cond
-            [(eqv? arity 1) (cons (ctfield-getter (cdr def)) args)]
-            [(and (eqv? arity 2) (ctfield-setter (cdr def))) =>
+            [(eqv? arity 0) (cons (ctfield-getter (cdr def)) args)]
+            [(and (eqv? arity 1) (ctfield-setter (cdr def))) =>
              (lambda (setter) (cons setter args))]
-            [else (bad-arity what ctcls "field")])]
-          [(method) (cons (ctmethod-id (find-arity (cdr def) arity what ctcls)) args)]
-          [(isa?)
-           (syntax-case args ()
-             [(e) #`(#3%record? e #,(ctcls-rtd ctcls))]
-             [else (bad-arity what)])]
-          [(make) (cons (ctcls-make ctcls) args)]
-          [(this)
-           (let ([what (car args)] [args (cdr args)])
-             (expand-this-def ctcls
-               (or (symbol-hashtable-ref names (syntax->datum what) #f)
-                   (unknown-member what ctcls))
-               what args))]
-          [(base)
-           (let ([what (car args)] [args (cdr args)] [parent (ctcls-parent ctcls)])
-             (expand-base-def parent
-               (or (symbol-hashtable-ref (ctcls-names parent) (syntax->datum what) #f)
-                   (unknown-member what parent))
-               what args))])))
+            [else (bad-arity what ctcls "field")]))]
+        [(method) (cons (ctmethod-id (find-arity (cdr def) (- (length args) 1) what ctcls)) args)]
+        [(isa?)
+         (syntax-case args ()
+           [(e) #`(#3%record? e #,(ctcls-rtd ctcls))]
+           [else (bad-arity what)])]
+        [(make) (cons (ctcls-make ctcls) args)]
+        [(this)
+         (let ([what (car args)] [args (cdr args)])
+           (expand-this-def ctcls
+             (or (symbol-hashtable-ref names (syntax->datum what) #f)
+                 (unknown-member what ctcls))
+             what args))]
+        [(base)
+         (let ([what (car args)] [args (cdr args)] [parent (ctcls-parent ctcls)])
+           (expand-base-def parent
+             (or (symbol-hashtable-ref (ctcls-names parent) (syntax->datum what) #f)
+                 (unknown-member what parent))
+             what args))]))
 
     (define (expand-this-def ctcls def what args)
-      (let ([arity (length args)])
-        (case (car def)
-          [(field)
-           (with-syntax ([offset (ctfield-offset (cdr def))])
-             (syntax-case args ()
-               [(inst)
-                #'(#%$object-ref 'scheme-object inst offset)]
-               [(inst val)
-                (ctfield-setter (cdr def))
-                #'(#%$object-set! 'scheme-object inst offset val)]
-               [else (bad-arity what ctcls "field")]))]
-          [(method) (cons (ctmethod-$id (find-arity (cdr def) arity what ctcls)) args)]
-          [else (unknown-member what ctcls)])))
+      (case (car def)
+        [(field)
+         (with-syntax ([offset (ctfield-offset (cdr def))])
+           (syntax-case args ()
+             [(inst)
+              #'(#%$object-ref 'scheme-object inst offset)]
+             [(inst val)
+              (ctfield-setter (cdr def))
+              #'(#%$object-set! 'scheme-object inst offset val)]
+             [else (bad-arity what ctcls "field")]))]
+        [(method) (cons (ctmethod-$id (find-arity (cdr def) (- (length args) 1) what ctcls)) args)]
+        [else (unknown-member what ctcls)]))
 
     (define (expand-base-def parent def what args)
-      (let ([arity (length args)])
-        (case (car def)
-          [(field)
-           (with-syntax ([offset (ctfield-offset (cdr def))])
-             (syntax-case args ()
-               [(inst)
-                #'(#%$object-ref 'scheme-object inst offset)]
-               [(inst val)
-                (ctfield-setter (cdr def))
-                #'(#%$object-set! 'scheme-object inst offset val)]
-               [else (bad-arity what parent "field")]))]
-          [(method)
-           (let ([m (find-arity (cdr def) arity what parent)])
-             (if (ctvirtual? m)
-                 (cons (ctvirtual-impl m) args)
-                 (cons (ctmethod-$id m) args)))]
-          [else (unknown-member what parent)])))
+      (case (car def)
+        [(field)
+         (with-syntax ([offset (ctfield-offset (cdr def))])
+           (syntax-case args ()
+             [(inst)
+              #'(#%$object-ref 'scheme-object inst offset)]
+             [(inst val)
+              (ctfield-setter (cdr def))
+              #'(#%$object-set! 'scheme-object inst offset val)]
+             [else (bad-arity what parent "field")]))]
+        [(method)
+         (let ([m (find-arity (cdr def) (- (length args) 1) what parent)])
+           (if (ctvirtual? m)
+               (cons (ctvirtual-impl m) args)
+               (cons (ctmethod-$id m) args)))]
+        [else (unknown-member what parent)]))
 
     (define (find-arity ls arity what ctcls)
-      (let ([method-arity (- arity 1)])
-        (let lp ([ls ls])
-          (if (null? ls)
-              (bad-arity what ctcls "instance method")
-              (let ([m (car ls)])
-                (if (= (ctmethod-arity m) method-arity)
-                    m
-                    (lp (cdr ls))))))))
+      (if (null? ls)
+          (bad-arity what ctcls "instance method")
+          (let ([m (car ls)])
+            (if (= (ctmethod-arity m) arity)
+                m
+                (find-arity (cdr ls) arity what ctcls)))))
 
     (define bad-arity
       (case-lambda
