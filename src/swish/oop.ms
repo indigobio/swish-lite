@@ -324,4 +324,69 @@
       (open-bytevector-input-port (get-bytevector2)))]
     [(1 2 #f) (f b)]
     [(3 4 5) (f c)])
-   'ok))
+   'ok)
+  (let ()
+    (define body-one
+      '((define-class A
+          (fields (immutable x))
+          (protocol
+           (lambda (new)
+             (lambda (x y)
+               ((new) (+ x y)))))
+          (method (m1 v) (cons x v))
+          (virtual (m2 v) (+ x v)))
+        (define (go op v)
+          (case op
+            [(make) (A make v (* v v))]
+            [(m1) (A m1 v 3)]
+            [(m2) (A m2 v 5)]))))
+    (define body-two
+      '((define-class B
+          (parent A)
+          (fields (immutable y))
+          (protocol
+           (lambda (new)
+             (lambda ()
+               ((new 10 4) 7))))
+          (virtual (m2 v) (vector x v)))
+        (define go2
+          (case-lambda
+           [() (B make)]
+           [(x) (B y x)]
+           [args (apply go args)]))))
+    (define (make-library name export* import* body)
+      `((library (,name) ,export* (import (scheme) (swish oop) ,@import*) ,@body)))
+    (define (make-module name export* import* body)
+      `((module ,name () ,export* (import (scheme) (swish oop) ,@import*) ,@body)))
+    ;; export / import from library
+    (compile-to-port
+     (make-library 'one '(export A go) '() body-one)
+     op1)
+    (load-compiled-from-port (open-bytevector-input-port (get-bytevector1)))
+    (compile-to-port
+     (make-library 'two '(export go2) '((one)) body-two)
+     op1)
+    (load-compiled-from-port (open-bytevector-input-port (get-bytevector1)))
+    (match-let*
+     ([(,go ,go2) (eval '(let () (import (one) (two)) (list go go2)))]
+      [(20 . 3) (go 'm1 (go 'make 4))]
+      [17 (go 'm2 (go 'make 3))]
+      [(14 . 3) (go2 'm1 (go2))]
+      [#(14 5) (go2 'm2 (go2))])
+     'ok)
+    ;; export / import from module
+    (compile-to-port
+     (make-module 'one '(export A go) '() body-one)
+     op1)
+    (load-compiled-from-port (open-bytevector-input-port (get-bytevector1)))
+    (compile-to-port
+     (make-module 'two '(export go2) '(one) body-two)
+     op1)
+    (load-compiled-from-port (open-bytevector-input-port (get-bytevector1)))
+    (match-let*
+     ([(,go ,go2) (eval '(let () (import one two) (list go go2)))]
+      [(6 . 3) (go 'm1 (go 'make 2))]
+      [95 (go 'm2 (go 'make 9))]
+      [(14 . 3) (go2 'm1 (go2))]
+      [#(14 5) (go2 'm2 (go2))])
+     'ok)))
