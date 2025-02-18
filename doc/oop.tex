@@ -110,9 +110,7 @@ No field or method may be named any of the following: \code{base}, \code{isa?},
 
 \begin{figure}[p]
 The \code{define-class} macro defines a \var{name} macro that behaves according to the
-following chart, where \nl{field} includes every field and unshadowed inherited field,
-\nl{mutable-field} includes every mutable \nl{field}, and \nl{method} includes every
-instance method and unshadowed inherited instance method:
+following chart:
 
 \begin{center}
 \begin{tabular}{|l|l|}
@@ -131,19 +129,20 @@ instance method and unshadowed inherited instance method:
 \hline
 \end{tabular}
 \end{center}
+
+\begin{itemize}
+\item \nl{field} includes every field and unshadowed inherited field.
+\item \nl{mutable-field} includes every mutable field and unshadowed inherited mutable
+  field.
+\item \nl{method} includes every instance method and unshadowed inherited instance method.
+\item \nl{class} is the class that defined the field or method.
+\end{itemize}
+
 \caption{\label{oop:class-name}Description of class \var{name} macro}
 \end{figure}
 
 \begin{figure}[p]
-The \nl{open-instance} macro introduces a scope with the following definitions, where
-\nl{field} includes every field and unshadowed inherited field, \nl{mutable-field}
-includes every mutable \nl{field}, \nl{method} includes every instance method and
-unshadowed inherited instance method, \nl{base-field} includes every parent-class field
-and unshadowed parent-class-inherited field, \nl{base-mutable-field} includes every
-mutable \nl{base-field}, \nl{base-nonvirt} includes every parent-class non-virtual
-instance method and unshadowed parent-class-inherited non-virtual instance method, and
-\nl{base-virtual} includes every parent-class virtual instance method and unshadowed
-parent-class-inherited virtual instance method.
+The \nl{open-instance} macro introduces a scope with the following definitions:
 
 \begin{center}
 \begin{tabular}{|l|l|}
@@ -174,5 +173,22 @@ parent-class-inherited virtual instance method.
 \hline
 \end{tabular}
 \end{center}
+
+\begin{itemize}
+\item \nl{field} includes every field and unshadowed inherited field.
+\item \nl{mutable-field} includes every mutable field and unshadowed inherited mutable
+  field.
+\item \nl{method} includes every instance method and unshadowed inherited instance method.
+\item \nl{base-field} includes every parent-class field and unshadowed
+  parent-class-inherited field.
+\item \nl{base-mutable-field} includes every parent-class mutable field and unshadowed
+  parent-class-inherited mutable field.
+\item \nl{base-nonvirt} includes every parent-class non-virtual instance method and
+  unshadowed parent-class-inherited non-virtual instance method.
+\item \nl{base-virtual} includes every parent-class virtual instance method and unshadowed
+  parent-class-inherited virtual instance method.
+\item \nl{class} is the class that defined the method.
+\end{itemize}
+
 \caption{\label{oop:open-instance}Description of \nl{open-instance} scope}
 \end{figure}
