@@ -254,17 +254,27 @@
     [6 (C f4 c)])
    'ok))
 
-(mat separate-compilation ()
- (let-values ([(op get-bytevector)
-               (open-bytevector-output-port)])
-   (compile-to-port
-     '((define-class A (fields (immutable x)))
-       (define-class B (parent A) (fields (immutable y)))
-       (define (f)
-         (let ([b (B make 1 2)])
-           (cons (B x b) (B y b)))))
-     op)
-   (load-compiled-from-port
-     (open-bytevector-input-port (get-bytevector)))
-   (match-let* ([(1 . 2) (f)])
-     'ok)))
+(mat compilation ()
+  (define-values (op1 get-bytevector1) (open-bytevector-output-port))
+  (define-values (op2 get-bytevector2) (open-bytevector-output-port))
+  (compile-to-port
+   '((define-class A (fields (immutable x)))
+     (define-class B (parent A) (fields (immutable y))))
+   op1)
+  (compile-to-port
+   '((define-class C (parent B) (fields (immutable x)))
+     (define (f obj)
+       (list (B x obj) (B y obj)
+         (and (C isa? obj) (C x obj))))
+     (cons (B make 1 2) (C make 3 4 5)))
+   op2)
+  (match-let*
+   ([,_
+     (load-compiled-from-port
+      (open-bytevector-input-port (get-bytevector1)))]
+    [(,b . ,c)
+     (load-compiled-from-port
+      (open-bytevector-input-port (get-bytevector2)))]
+    [(1 2 #f) (f b)]
+    [(3 4 5) (f c)])
+   'ok))
