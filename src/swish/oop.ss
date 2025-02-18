@@ -257,7 +257,7 @@
         name                            ; identifier
         parent                          ; ctcls
         fields                          ; ((offset fname getter setter) ...)
-        protocol                        ; syntax
+        protocol                        ; #f | syntax
         methods                         ; ((mname arity $id id formals body) ...)
         virtuals                        ; ((offset id $id mname arity impl formals body) ...)
         overrides                       ; ((offset id $id mname arity impl formals body) ...)
@@ -280,7 +280,6 @@
                   [all-virtuals (reverse virtuals)])
               ($l layout-virtuals
                 ([fields (if fields (layout-fields fields (total-field-count parent)) '())]
-                 [protocol (or protocol #'#f)]
                  [methods (reverse methods)]
                  [virtuals '()]
                  [overrides '()]
