@@ -165,6 +165,29 @@
     [(C-f1 1) (C g c)]
     [7 (C f1 c 10 3)])
    'ok)
+  (match-let*
+   ([,a (A make 3 4)]
+    [,b (B make 5 6 7 8)]
+    [,b-alt
+     (let ()
+       (define-class B (fields (immutable x)))
+       (B make 'still))]
+    [,c-alt
+     (let ()
+       ;; like-named subclass in a different scope
+       (define-class C (parent B) (virtual (m1 z) (list 'z= z (base m1 z))))
+       (C make 10 9 8 7))]
+    [(z= 3 (B.m1 (A.m1 3))) (B m1 c-alt 3)]
+    ["Exception in m1: #[A 3 4] is not of type #<record type B>."
+     (parameterize ([print-gensym #f])
+       (exit-reason->english (try (B m1 a))))]
+    ["Exception in m5: #[B still] is not of type #<record type B>."
+     (parameterize ([print-gensym #f])
+       (exit-reason->english (try (B m5 b-alt))))]
+    ["Exception in g: #[B 5 6 7 8] is not of type #<record type C>."
+     (parameterize ([print-gensym #f])
+       (exit-reason->english (try (C g b))))])
+   'ok)
   (let ()
     ;; recursive call to virtual goes through virtual table
     (define-class A (virtual (m x) (if (zero? x) 1 (* x (m (- x 1))))))
