@@ -249,8 +249,8 @@
         parent                          ; #f | ctcls
         fields                          ; #f | ((fname getter setter) ...)
         protocol                        ; #f | syntax
-        methods                         ; ((mname arity $id id tmps formals body) ...)
-        virtuals                        ; ((mname arity impl tmps formals body) ...)
+        methods                         ; ((mname arity $id id formals body) ...)
+        virtuals                        ; ((mname arity impl formals body) ...)
         )
 
       (define-syntactic-monad $l
@@ -258,9 +258,9 @@
         parent                          ; ctcls
         fields                          ; ((offset fname getter setter) ...)
         protocol                        ; syntax
-        methods                         ; ((mname arity $id id tmps formals body) ...)
-        virtuals                        ; ((offset id $id mname arity impl tmps formals body) ...)
-        overrides                       ; ((offset id $id mname arity impl tmps formals body) ...)
+        methods                         ; ((mname arity $id id formals body) ...)
+        virtuals                        ; ((offset id $id mname arity impl formals body) ...)
+        overrides                       ; ((offset id $id mname arity impl formals body) ...)
         next-index                      ; fixnum
         )
 
@@ -315,7 +315,7 @@
                    ($p parse
                      ([methods
                        (cons (list #'mname arity (new-id "$" name "." #'mname "." arity)
-                               (new-id name "." #'mname "." arity) (map new-id #'(formal ...))
+                               (new-id name "." #'mname "." arity)
                                #'(formal ...) (make-body #'(body ...))) methods)])
                      (cdr clauses)))]
                 [(kw:virtual (mname formal ...) body ...)
@@ -325,7 +325,7 @@
                    ($p parse
                      ([virtuals
                        (cons (list #'mname arity (new-id "$" name "." #'mname "." arity ".impl")
-                               (map new-id #'(formal ...)) #'(formal ...) (make-body #'(body ...)))
+                               #'(formal ...) (make-body #'(body ...)))
                          virtuals)])
                      (cdr clauses)))]))))
 
@@ -400,14 +400,14 @@
          (new-id name ".make")
          ;; ((field-offset field-name name.field field-setter) ...)
          fields
-         ;; ((method-name method-arity $name.method.arity name.method.arity method-tmps
+         ;; ((method-name method-arity $name.method.arity name.method.arity
          ;;    method-formals method-body) ...)
          methods
          ;; ((virtual-offset name.virtual.arity $name.virtual.arity virtual-name virtual-arity
-         ;;    $name.virtual.arity.impl virtual-tmps virtual-formals virtual-body) ...)
+         ;;    $name.virtual.arity.impl virtual-formals virtual-body) ...)
          virtuals
          ;; ((override-offset override-id override-$id override-name override-arity
-         ;;    $name.override.arity.impl override-tmps override-formals override-body) ...)
+         ;;    $name.override.arity.impl override-formals override-body) ...)
          overrides
          ;; ((name.mutable-field.set! mutable-field-name mutable-field-offset) ...)
          (let lp ([fields fields])
@@ -439,12 +439,12 @@
                  protocol
                  name.make
                  ((field-offset field-name name.field field-setter) ...)
-                 ((method-name method-arity $name.method.arity name.method.arity method-tmps
+                 ((method-name method-arity $name.method.arity name.method.arity
                     method-formals method-body) ...)
                  ((virtual-offset name.virtual.arity $name.virtual.arity virtual-name virtual-arity
-                    $name.virtual.arity.impl virtual-tmps virtual-formals virtual-body) ...)
+                    $name.virtual.arity.impl virtual-formals virtual-body) ...)
                  ((override-offset override-id override-$id override-name override-arity
-                    $name.override.arity.impl override-tmps override-formals override-body) ...)
+                    $name.override.arity.impl override-formals override-body) ...)
                  ((name.mutable-field.set! mutable-field-name mutable-field-offset) ...)
                  )
                 (doit cte #'name #'(clause ...))])
@@ -473,10 +473,10 @@
                               #'override-id override-offset #'$name.override.arity.impl) ...)))
                   (define-syntax name (make-class-dispatcher ctcls))
                   (define-property name class ctcls)
-                  (define ($name.virtual.arity.impl inst . virtual-tmps)
-                    (open-instance name inst virtual-tmps virtual-formals virtual-body)) ...
-                  (define ($name.override.arity.impl inst . override-tmps)
-                    (open-instance name inst override-tmps override-formals override-body)) ...
+                  (define ($name.virtual.arity.impl inst . virtual-formals)
+                    (open-instance name inst virtual-formals virtual-body)) ...
+                  (define ($name.override.arity.impl inst . override-formals)
+                    (open-instance name inst override-formals override-body)) ...
                   (define name.rtd (make-class-rtd name))
                   (define name.rcd
                     (make-record-constructor-descriptor name.rtd parent-rcd protocol))
@@ -487,8 +487,8 @@
                   (define (name.mutable-field.set! inst x)
                     (record-check 'mutable-field-name inst name.rtd)
                     (#%$object-set! 'scheme-object inst mutable-field-offset x)) ...
-                  (define ($name.method.arity inst . method-tmps)
-                    (open-instance name inst method-tmps method-formals method-body)) ...
+                  (define ($name.method.arity inst . method-formals)
+                    (open-instance name inst method-formals method-body)) ...
                   (define (name.method.arity inst . method-formals)
                     (record-check 'method-name inst name.rtd)
                     ($name.method.arity inst . method-formals)) ...
@@ -536,7 +536,7 @@
 
   (define-syntax (open-instance x)
     (syntax-case x ()
-      [(_ cname inst tmps formals body)
+      [(_ cname inst formals body)
        (lambda (cte)
          (define-syntactic-monad $o
            ctcls                ; ctcls
@@ -572,39 +572,39 @@
                          [((immutable-field . immutable-field-offset) ...) immutable-fields]
                          [((mutable-field . mutable-field-offset) ...) mutable-fields]
                          [((method (method-$id . method-args) ...) ...) methods])
-             #'(fluid-let-syntax
-                ([this
-                  (lambda (x)
-                    (syntax-case x ()
-                      [(__ what . args)
-                       (identifier? #'what)
-                       #'(cname #{this eufjl7k5jwfpg31mjs5680p9d} what inst . args)]
-                      [__ (identifier? #'__) #'inst]))]
-                 [base
-                  (lambda (x)
-                    (if parent?
-                        (syntax-case x ()
-                          [(__ what . args)
-                           (identifier? #'what)
-                           #'(cname #{base a36te8sh8d4jwl80hjktg92qdwn887ze} what inst . args)])
-                        (syntax-error x "no parent for")))])
-                (let-syntax
-                    ([immutable-field
-                      (identifier-syntax (#%$object-ref 'scheme-object inst immutable-field-offset))]
-                     ...
-                     [mutable-field
-                      (identifier-syntax
-                       [id (#%$object-ref 'scheme-object inst mutable-field-offset)]
-                       [(set! id val)
-                        (#%$object-set! 'scheme-object inst mutable-field-offset val)])]
-                     ...
-                     [method
-                      (lambda (x)
-                        (syntax-case x ()
-                          [(__ . method-args) #'(method-$id inst . method-args)]
-                          ...))]
-                     ...)
-                  ((lambda formals body) . tmps)))))
+             #'((fluid-let-syntax
+                 ([this
+                   (lambda (x)
+                     (syntax-case x ()
+                       [(__ what . args)
+                        (identifier? #'what)
+                        #'(cname #{this eufjl7k5jwfpg31mjs5680p9d} what inst . args)]
+                       [__ (identifier? #'__) #'inst]))]
+                  [base
+                   (lambda (x)
+                     (if parent?
+                         (syntax-case x ()
+                           [(__ what . args)
+                            (identifier? #'what)
+                            #'(cname #{base a36te8sh8d4jwl80hjktg92qdwn887ze} what inst . args)])
+                         (syntax-error x "no parent for")))])
+                 (let-syntax
+                     ([immutable-field
+                       (identifier-syntax (#%$object-ref 'scheme-object inst immutable-field-offset))]
+                      ...
+                      [mutable-field
+                       (identifier-syntax
+                        [id (#%$object-ref 'scheme-object inst mutable-field-offset)]
+                        [(set! id val)
+                         (#%$object-set! 'scheme-object inst mutable-field-offset val)])]
+                      ...
+                      [method
+                       (lambda (x)
+                         (syntax-case x ()
+                           [(__ . method-args) #'(method-$id inst . method-args)]
+                           ...))]
+                      ...)
+                   (lambda formals body))) . formals)))
          (let ([ctcls (cte #'cname #'class)])
            (let-values ([(names defs) (hashtable-entries (ctcls-names ctcls))])
              ($o gather ([immutable-fields '()] [mutable-fields '()] [methods '()]) 0))))]))
