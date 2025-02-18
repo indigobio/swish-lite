@@ -160,35 +160,29 @@
 
     (define (expand-this-def ctcls def what args)
       (case (car def)
-        [(field)
-         (with-syntax ([offset (ctfield-offset (cdr def))])
-           (syntax-case args ()
-             [(inst)
-              #'(#%$object-ref 'scheme-object inst offset)]
-             [(inst val)
-              (ctfield-setter (cdr def))
-              #'(#%$object-set! 'scheme-object inst offset val)]
-             [else (bad-arity what ctcls "field")]))]
+        [(field) (expand-field ctcls def what args)]
         [(method) (cons (ctmethod-$id (find-arity (cdr def) (- (length args) 1) what ctcls)) args)]
         [else (unknown-member what ctcls)]))
 
     (define (expand-base-def parent def what args)
       (case (car def)
-        [(field)
-         (with-syntax ([offset (ctfield-offset (cdr def))])
-           (syntax-case args ()
-             [(inst)
-              #'(#%$object-ref 'scheme-object inst offset)]
-             [(inst val)
-              (ctfield-setter (cdr def))
-              #'(#%$object-set! 'scheme-object inst offset val)]
-             [else (bad-arity what parent "field")]))]
+        [(field) (expand-field parent def what args)]
         [(method)
          (let ([m (find-arity (cdr def) (- (length args) 1) what parent)])
            (if (ctvirtual? m)
                (cons (ctvirtual-impl m) args)
                (cons (ctmethod-$id m) args)))]
         [else (unknown-member what parent)]))
+
+    (define (expand-field ctcls def what args)
+      (with-syntax ([offset (ctfield-offset (cdr def))])
+        (syntax-case args ()
+          [(inst)
+           #'(#%$object-ref 'scheme-object inst offset)]
+          [(inst val)
+           (ctfield-setter (cdr def))
+           #'(#%$object-set! 'scheme-object inst offset val)]
+          [else (bad-arity what ctcls "field")])))
 
     (define (find-arity ls arity what ctcls)
       (if (null? ls)
