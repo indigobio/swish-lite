@@ -189,6 +189,19 @@
        (exit-reason->english (try (C g b))))])
    'ok)
   (let ()
+    (define-class A
+      ;; cover (this m ...) case where m is virtual
+      (virtual (m1 x) (list 'A-m1 x (this m2 (+ x 1))))
+      (virtual (m2 x) (list 'A-m2 x)))
+    (define-class B (parent A)
+      (virtual (m2 x) (list 'B-m2 x)))
+    (define a (A make))
+    (define b (B make))
+    (match-let*
+     ([(A-m1 1 (A-m2 2)) (A m1 a 1)]
+      [(A-m1 3 (B-m2 4)) (A m1 b 3)])
+     'ok))
+  (let ()
     ;; recursive call to virtual goes through virtual table
     (define-class A (virtual (m x) (if (zero? x) 1 (* x (m (- x 1))))))
     (define-class B (parent A) (virtual (m x) 7) (method (m2 x) (base m x)))
