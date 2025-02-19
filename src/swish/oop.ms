@@ -190,10 +190,13 @@
    'ok)
   (let ()
     (define-class A
+      (fields (immutable a) (mutable b))
       (virtual (m0) #f)
       ;; cover (this m ...) case where m is virtual
       (virtual (m1 x) (list 'A-m1 x (this m2 (+ x 1))))
-      (virtual (m2 x) (list 'A-m2 x)))
+      (virtual (m2 x) (list 'A-m2 x))
+      (method (m3)
+        (list (this a) (this b))))
     (define-class B
       (parent A)
       (virtual (m2 x) (list 'B-m2 x))
@@ -203,14 +206,19 @@
       (parent B)
       (method (m) (list (m0) (base m0)))
       ;; cover "this" reference in virtual
-      (virtual (m0) this))
-    (define a (A make))
-    (define b (B make))
+      (virtual (m0) this)
+      (method (m3)
+        ;; cover this for inherited fields
+        (this b (+ (this a) (* 2 (this b))))
+        (base m3)))
+    (define a (A make 3 5))
+    (define b (B make 7 9))
     (match-let*
      ([(A-m1 1 (A-m2 2)) (A m1 a 1)]
       [(A-m1 3 (B-m2 4)) (A m1 b 3)]
-      [,c (C make)]
-      [(,@c B) (C m c)])
+      [,c (C make 12 15)]
+      [(,@c B) (C m c)]
+      [(12 42) (C m3 c)])
      'ok))
   (let ()
     ;; recursive call to virtual goes through virtual table
