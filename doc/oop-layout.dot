@@ -1,0 +1,6 @@
+digraph records {
+ node [shape=record,fontsize=11];
+ inst [label="<rtd> class rtd|<field> field|..."];
+ inst_rtd [label="{base-rtd|virtual|...}"];
+ inst:rtd -> inst_rtd;
+}
