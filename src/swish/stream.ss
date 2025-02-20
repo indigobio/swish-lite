@@ -57,6 +57,7 @@
    s/ht*
    s/ht**
    s/join
+   s/json-object
    s/last
    s/length
    s/map
@@ -525,6 +526,7 @@
 
   (define s/ht
     (case-lambda
+     [() (s/ht car cdr)]
      [(fk fv) ($ht x (fk x) (fv x) make-hashtable-for-key)]
      [(fk fv hash equiv?) ($ht x (fk x) (fv x) (lambda (_) (make-hashtable hash equiv?)))]))
 
@@ -558,6 +560,7 @@
 
   (define s/ht*
     (case-lambda
+     [() (s/ht* car cdr)]
      [(fk fv) ($ht* x (fk x) (fv x) make-hashtable-for-key reverse)]
      [(fk fv hash equiv?) ($ht* x (fk x) (fv x) (lambda (_) (make-hashtable hash equiv?)) reverse)]))
 
@@ -566,6 +569,7 @@
       (define (fix v)
         (fold-left (lambda (tail ls) (append ls tail)) '() v))
       (case-lambda
+       [() (s/ht** car cdr)]
        [(fk fv) ($ht* x (fk x) (fv x) make-hashtable-for-key fix)]
        [(fk fv hash equiv?) ($ht* x (fk x) (fv x) (lambda (_) (make-hashtable hash equiv?)) fix)])))
 
@@ -815,4 +819,16 @@
 
   (define (s/sort-by f lt)
     (s/sort (lambda (a b) (lt (f a) (f b)))))
+
+  (define s/json-object
+    (case-lambda
+     [() (s/json-object car cdr)]
+     [(fk fv)
+      (s/ht (lambda (x)
+              (let ([k (fk x)])
+                (cond
+                 [(symbol? k) k]
+                 [(string? k) (string->symbol k)]
+                 [else (throw `#(invalid-key ,k))])))
+        fv symbol-hash eq?)]))
   )
