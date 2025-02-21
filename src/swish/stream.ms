@@ -218,10 +218,6 @@
                [#t (symbol-hashtable? ht)]
                [((a . 1) (b . 2)) (s/> ht s/sort-cells)]
                [((a . 1) (b . 2)) (s/> '((1 . a) (2 . b)) (s/ht cdr car) s/sort-cells)]
-               [#t (eq-hashtable? (s/> '((1 . x)) (s/ht)))]
-               [#t (eqv-hashtable? (s/> '((1.0 . x)) (s/ht)))]
-               [#t (string-hashtable? (s/> '(("1" . x)) (s/ht)))]
-               [#t (equal-hashtable? (s/> '(((1) . x)) (s/ht)))]
                [#t (string-hashtable? (s/> '() (s/ht car cdr string-hash string=?)))]
                [`(catch #(duplicate-key "a" 1 2))
                 (try (s/> '(("a" . 1) ("A" . 2))
@@ -233,6 +229,8 @@
                [#t (symbol-hashtable? ht)]
                [((a 1 3) (b 2)) (s/> ht s/sort-cells)]
                [((a 1 3) (b 2)) (s/> '((1 . a) (2 . b) (3 . a)) (s/ht* cdr car) s/sort-cells)]
+               [((a 1 3) (b 2))
+                (s/> '((1 . a) (2 . b) (3 . a)) (s/ht* cdr car equal-hash equal?) s/sort-cells)]
                [#t (string-hashtable? (s/> '() (s/ht* car cdr string-hash string=?)))])
     'ok))
 
@@ -242,9 +240,23 @@
                [((a 1 2 5 6) (b 3 4)) (s/> ht s/sort-cells)]
                [((a 1 2 5 6) (b 3 4))
                 (s/> '(((1 2) . a) ((3 4) . b) ((5 6) . a)) (s/ht** cdr car) s/sort-cells)]
+               [((a 1 2 5 6) (b 3 4))
+                (s/> '(((1 2) . a) ((3 4) . b) ((5 6) . a))
+                  (s/ht** cdr car equal-hash equal?)
+                  s/sort-cells)]
                [#t (string-hashtable? (s/> '() (s/ht** car cdr string-hash string=?)))])
     'ok))
 
+(mat make-hashtable-for-key ()
+  (match-let* ([#t (eq-hashtable? (s/> '((1 . x)) (s/ht)))]
+               [#t (eq-hashtable? (s/> `((,(condition) . x)) (s/ht)))]
+               [#t (eq-hashtable? (s/> '((#t . x)) (s/ht)))]
+               [#t (eqv-hashtable? (s/> '((1.0 . x)) (s/ht)))]
+               [#t (string-hashtable? (s/> '(("1" . x)) (s/ht)))]
+               [#t (symbol-hashtable? (s/> '((a . x)) (s/ht)))]
+               [#t (equal-hashtable? (s/> '(((1) . x)) (s/ht)))]
+               )
+    'ok))
 (mat s/json-object ()
   (match-let* ([,j (s/> '((a . 1) ("b" . 2)) (s/json-object))]
                [#t (json:object? j)]
