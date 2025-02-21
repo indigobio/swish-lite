@@ -91,10 +91,10 @@
    stream->vector
    stream-cons
    stream-cons*
+   stream-lift
    stream-repeat
    stream-unfold
    stream?
-   stream-lift
    transformer-compose
    transformer-compose*
    unstream
