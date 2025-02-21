@@ -157,8 +157,8 @@ next state.
 \returns{} a stream
 
 The \code{stream-repeat} procedure returns a stream of \var{n} values. The
-\var{i}$^\textrm{th}$ value is \code{(procedure \var{i})}. \var{procedure} is invoked in
-order with \var{i} starting at 0.
+\var{i}$^\textrm{th}$ value is \code{(\var{procedure} \var{i})}. \var{procedure} is
+invoked in order with \var{i} starting at 0.
 
 \codebegin
 > (stream->list (stream-repeat 5 values))
@@ -460,15 +460,16 @@ created (see Table~\ref{tab:stream-ht}).
 
 \defineentry{s/ht}
 \begin{procedure}
-  \code{(s/ht \var{fk} \var{fv} \opt{\var{hash} \var{equiv?}})}
+  \code{(s/ht \opt{\var{fk} \var{fv} \opt{\var{hash} \var{equiv?}}})}
 \end{procedure}
 \returns{} a transformer
 
 The \code{s/ht} procedure returns a transformer that maps each value \var{x} in a finite
-stream to a cell with key \code{(fk x)} and value \code{(fv x)} in a hashtable created
-with \code{(make-hashtable \var{hash} \var{equiv?})}. If \var{hash} and \var{equiv?} are
-not provided, a hashtable appropriate for the first key is created (see
-Table~\ref{tab:stream-ht}).  If two values $v_1$ and $v_2$ have the same key \var{k},
+stream to a cell with key \code{(\var{fk} \var{x})} and value \code{(\var{fv} \var{x})} in
+a hashtable created with \code{(make-hashtable \var{hash} \var{equiv?})}. If \var{fk} and
+\var{fv} are not provided, \code{car} and \code{cdr} are used, respectively. If \var{hash}
+and \var{equiv?} are not provided, a hashtable appropriate for the first key is created
+(see Table~\ref{tab:stream-ht}). If two values $v_1$ and $v_2$ have the same key \var{k},
 error \code{\#(duplicate-key \var{k} $v_1$ $v_2$)} is raised.
 
 \codebegin
@@ -481,16 +482,17 @@ error \code{\#(duplicate-key \var{k} $v_1$ $v_2$)} is raised.
 
 \defineentry{s/ht*}
 \begin{procedure}
-  \code{(s/ht* \var{fk} \var{fv} \opt{\var{hash} \var{equiv?}})}
+  \code{(s/ht* \opt{\var{fk} \var{fv} \opt{\var{hash} \var{equiv?}}})}
 \end{procedure}
 \returns{} a transformer
 
 The \code{s/ht*} procedure returns a transformer that maps each value in a finite stream
 into a hashtable created with \code{(make-hashtable \var{hash} \var{equiv?})}. Stream
-value \var{x} is mapped to key \code{(fk x)}. The value for a key is the list of stream
-values with that key, in order of their appearance in the stream, mapped with \var{fv}. If
-\var{hash} and \var{equiv?} are not provided, a hashtable appropriate for the first key is
-created (see Table~\ref{tab:stream-ht}).
+value \var{x} is mapped to key \code{(\var{fk} \var{x})}. The value for a key is the list
+of stream values with that key, in order of their appearance in the stream, mapped with
+\var{fv}. If \var{fk} and \var{fv} are not provided, \code{car} and \code{cdr} are used,
+respectively. If \var{hash} and \var{equiv?} are not provided, a hashtable appropriate for
+the first key is created (see Table~\ref{tab:stream-ht}).
 
 \codebegin
 > (s/> '("a" "b" "cc")
@@ -502,16 +504,17 @@ created (see Table~\ref{tab:stream-ht}).
 
 \defineentry{s/ht**}
 \begin{procedure}
-  \code{(s/ht** \var{fk} \var{fv} \opt{\var{hash} \var{equiv?}})}
+  \code{(s/ht** \opt{\var{fk} \var{fv} \opt{\var{hash} \var{equiv?}}})}
 \end{procedure}
 \returns{} a transformer
 
 The \code{s/ht**} procedure returns a transformer that maps each value in a finite stream
 into a hashtable created with \code{(make-hashtable \var{hash} \var{equiv?})}. Stream
-value \var{x} is mapped to key \code{(fk x)}. The value for a key is the list of stream
-values with that key, in order of their appearance in the stream, map-concatenated with
-\var{fv}. If \var{hash} and \var{equiv?} are not provided, a hashtable appropriate for the
-first key is created (see Table~\ref{tab:stream-ht}).
+value \var{x} is mapped to key \code{(\var{fk} \var{x})}. The value for a key is the list
+of stream values with that key, in order of their appearance in the stream,
+map-concatenated with \var{fv}. If \var{fk} and \var{fv} are not provided, \code{car} and
+\code{cdr} are used, respectively. If \var{hash} and \var{equiv?} are not provided, a
+hashtable appropriate for the first key is created (see Table~\ref{tab:stream-ht}).
 
 \codebegin
 > (s/> '(("a" 1 2) ("b" 3 4) ("a" 5 6))
@@ -541,6 +544,21 @@ the string as with \code{display}. It returns the empty string if the stream is 
 > (s/> '(a b) (s/join ", " " and " ", and "))
 "a and b"
 \codeend
+
+\defineentry{s/json-object}
+\begin{procedure}
+  \code{(s/json-object \opt{\var{fk} \var{fv}})}
+\end{procedure}
+\returns{} a transformer
+
+The \code{s/json-object} procedure returns a transformer that maps each value \var{x} in a
+finite stream to a cell with key \code{(\var{fk} \var{x})} and value \code{(\var{fv}
+  \var{x})} in a hashtable created with \code{(json:make-object)}. Procedure \var{fk}
+should return a symbol or string. If a string is returned, it is converted to a symbol. If
+\var{fk} and \var{fv} are not provided, \code{car} and \code{cdr} are used, respectively.
+If two values $v_1$ and $v_2$ have the same key \var{k}, error \code{\#(duplicate-key
+  \var{k} $v_1$ $v_2$)} is raised. If \var{fk} returns a non-symbol, non-string value
+\var{k}, error \code{\#(invalid-key \var{k})} is raised.
 
 \defineentry{s/last}
 \begin{variable}

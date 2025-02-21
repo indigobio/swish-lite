@@ -30,6 +30,29 @@
 
 (define (square x) (* x x))
 
+(define s/sort-cells
+  (s/sort-by car
+    (lambda (a b)
+      (cond
+       [(number? a) (< a b)]
+       [(string? a) (string<? a b)]
+       [(symbol? a) (string<? (symbol->string a) (symbol->string b))]))))
+
+(define (eqv-hashtable? x)
+  (and (hashtable? x)
+       (eq? (hashtable-equivalence-function x) eqv?)
+       (not (hashtable-hash-function x))))
+
+(define (string-hashtable? x)
+  (and (hashtable? x)
+       (eq? (hashtable-equivalence-function x) string=?)
+       (eq? (hashtable-hash-function x) string-hash)))
+
+(define (equal-hashtable? x)
+  (and (hashtable? x)
+       (eq? (hashtable-equivalence-function x) equal?)
+       (eq? (hashtable-hash-function x) equal-hash)))
+
 (mat eos ()
   (assert (eos? eos)))
 
@@ -50,14 +73,6 @@
                [(1 2 3) (s/> '(1 2 3) (s/fold-right cons '()))]
                [(3 2 1) (s/> '(1 2 3) (s/fold-left (lambda (ls x) (cons x ls)) '()))]
                [(3 2 1) (s/> '(1 2 3) s/reverse)]
-               [() (s/> '(1 2 3) (s/take 0))]
-               [(1 2) (s/> '(1 2 3) (s/take 2))]
-               [(1 2 3) (s/> '(1 2 3) (s/take 3))]
-               [(1 2 3) (s/> '(1 2 3) (s/take 4))]
-               [(1 2 3) (s/> '(1 2 3) (s/drop 0))]
-               [(3) (s/> '(1 2 3) (s/drop 2))]
-               [() (s/> '(1 2 3) (s/drop 3))]
-               [() (s/> '(1 2 3) (s/drop 4))]
                [() (s/> '() s/concat)]
                [(1 2 3 4) (s/> '((1 2) (3 4)) s/concat)]
                [(1 2 (3) 4 5) (s/> '(() () (1 2) () () ((3)) (4 5) () ()) s/concat)]
@@ -75,15 +90,10 @@
                ["a, b, and c" (s/> '(a b c) fancy-join)]
                ["a, b, c, and d" (s/> '(a b c d) fancy-join)]
                [(0 1 0 1 2) (s/> '(2 3) (s/map-concat iota))]
-               [() (s/> '() (s/uniq))]
-               [("a" "b") (s/> '("a" "b" "a") (s/uniq))]
-               [("a" "b") (s/> '("a" "b" "A") (s/uniq string-ci-hash string-ci=?))]
+               [("1" "2") (s/> '("1" "2" "1") (s/uniq-by string->number))]
                [("a" "b") (s/> '("a" "b" "A") (s/uniq-by values string-ci-hash string-ci=?))]
                [(1 2) (s/> '((1) (2) (1)) (s/map-uniq car))]
                [("a" "b") (s/> '(("a") ("b") ("a")) (s/map-uniq car string-hash string=?))]
-               [((1 1) (2 2 -2)) (s/> '(1 2 -2) (s/group-by abs) s/cells (s/sort-by car <))]
-               [((1 . 1) (2 . -2)) (s/> '(1 -2) (s/by-key abs) s/cells (s/sort-by car <))]
-               [`(catch #(duplicate-key 1 1 -1)) (try (s/> '(1 -1) (s/by-key abs) s/cells))]
                [() (s/> '() (s/chunk-every 2))]
                [((0)) (s/> (iota 1) (s/chunk-every 2))]
                [((0 1)) (s/> (iota 2) (s/chunk-every 2))]
@@ -156,21 +166,7 @@
                [0 (s/> '() (s/count values))]
                [2 (s/> '(#t #f #t) (s/count values))]
                [16 (s/> '((7) (0) (8) (#t) (#f)) (s/count car))]
-               [(1 2 3) (s/> '(3 2 1) (s/sort <))]
                [(("c") ("b") ("a")) (s/> '(("a") ("b") ("c")) (s/sort-by car string>?))]
-               [(("a" 0 0 1 2) ("b" 0 1)) (s/> '(("a" . 1) ("b" . 2) ("a" . 3))
-                                            (s/ht** car (lambda (x) (iota (cdr x))))
-                                            s/cells
-                                            (s/sort-by car string<?))]
-               [(("a" 1 3) ("b" 2)) (s/> '(("a" . 1) ("b" . 2) ("a" . 3))
-                                      (s/ht* car cdr)
-                                      (s/sort-by car string<?))]
-               [(("a" . -1) ("b" . -2)) (s/> '(("a" . 1) ("b" . 2))
-                                          (s/ht car (lambda (x) (- (cdr x))))
-                                          (s/sort-by car string<?))]
-               [`(catch #(duplicate-key "a" 1 2))
-                (try (s/> '(("a" . 1) ("A" . 2))
-                       (s/ht (lambda (x) (string-downcase (car x))) cdr)))]
                [() (s/> '() (s/chunk odd?))]
                [((1 3)) (s/> '(1 3) (s/chunk odd?))]
                [((1 3) (2 4) (5 7)) (s/> '(1 3 2 4 5 7) (s/chunk odd?))]
@@ -183,13 +179,58 @@
                [((2 1) (2)) (s/> '(2 1 2) (s/chunk2 <=))]
                [((2 3 4) (3 2 1) (2 3 4)) (s/> '(2 3 4 3 2 1 2 3 4) (s/chunk2 <=))]
                [((3 2 1) (2 3 4) (3 2 1)) (s/> '(3 2 1 2 3 4 3 2 1) (s/chunk2 <=))]
-               [(1 2 3) (s/> '(1 2 3) (s/drop-last 0))]
-               [(1 2) (s/> '(1 2 3) (s/drop-last 1))]
-               [(1) (s/> '(1 2 3) (s/drop-last 2))]
-               [() (s/> '(1 2 3) (s/drop-last 3))]
-               [() (s/> '(1 2 3) (s/drop-last 4))]
-               [() (s/> '() (s/drop-last 4))]
-               [() (s/> '(1 2 3) (s/take-last 0))]
+               [(("a" . 1) ("b" . 2)) (s/> '((a . 1) (b . 2)) (s/map-car symbol->string))]
+               [((a . 2) (b . 3)) (s/> '((a . 1) (b . 2)) (s/map-cdr 1+))]
+               [((1 . -1) (2 . -2)) (s/> '(1 2) (s/map-cons -))]
+               [`(catch #(bad-arg vector->stream ())) (try (vector->stream '()))]
+               )
+    'ok))
+
+(mat s/by-key ()
+  (match-let* ([,ht (s/> '(1 -2) (s/by-key abs))]
+               [#t (eq-hashtable? ht)]
+               [((1 . 1) (2 . -2)) (s/> ht s/cells (s/sort-by car <))]
+               [((1 . 1) (2 . -2))
+                (s/> '(1 -2) (s/by-key abs equal-hash equal?) s/cells (s/sort-by car <))]
+               [#t (string-hashtable? (s/> '() (s/by-key abs string-hash string=?)))]
+               [`(catch #(duplicate-key 1 1 -1)) (try (s/> '(1 -1) (s/by-key abs) s/cells))]
+               )
+    'ok))
+
+(mat s/group-by ()
+  (match-let* ([,ht (s/> '(1 2 -2) (s/group-by abs))]
+               [#t (eq-hashtable? ht)]
+               [((1 1) (2 2 -2)) (s/> ht s/cells (s/sort-by car <))]
+               [((1 1) (2 2 -2))
+                (s/> '(1 2 -2) (s/group-by abs equal-hash equal?) s/cells (s/sort-by car <))]
+               [#t (string-hashtable? (s/> '() (s/group-by abs string-hash string=?)))]
+               )
+    'ok))
+
+(mat s/uniq ()
+  (match-let* ([() (s/> '() (s/uniq))]
+               [("a" "b") (s/> '("a" "b" "a") (s/uniq))]
+               [(a b) (s/> '(a b a) (s/uniq))]
+               [("a" "b") (s/> '("a" "b" "A") (s/uniq string-ci-hash string-ci=?))]
+               [("A" "b") (s/> '("A" "b" "a") (s/uniq string-ci-hash string-ci=?))]
+               )
+    'ok))
+
+(mat s/map-filter ()
+  (match-let* ([(1 3) (s/> '("1" "two" "3") (s/map-filter string->number))])
+    'ok))
+
+(mat s/take ()
+  (match-let* ([() (s/> '(1 2 3) (s/take 0))]
+               [(1 2) (s/> '(1 2 3) (s/take 2))]
+               [(1 2 3) (s/> '(1 2 3) (s/take 3))]
+               [(1 2 3) (s/> '(1 2 3) (s/take 4))]
+               [`(catch #(bad-arg s/take one)) (try (s/> '(1 2 3) (s/take 'one)))]
+               )
+    'ok))
+
+(mat s/take-last ()
+  (match-let* ([() (s/> '(1 2 3) (s/take-last 0))]
                [(3) (s/> '(1 2 3) (s/take-last 1))]
                [(2 3) (s/> '(1 2 3) (s/take-last 2))]
                [(1 2 3) (s/> '(1 2 3) (s/take-last 3))]
@@ -197,10 +238,96 @@
                [() (s/> '() (s/take-last 0))]
                [() (s/> '() (s/take-last 1))]
                [() (s/> '() (s/take-last 2))]
-               [(("a" . 1) ("b" . 2)) (s/> '((a . 1) (b . 2)) (s/map-car symbol->string))]
-               [((a . 2) (b . 3)) (s/> '((a . 1) (b . 2)) (s/map-cdr 1+))]
-               [((1 . -1) (2 . -2)) (s/> '(1 2) (s/map-cons -))]
+               [`(catch #(bad-arg s/take-last one)) (try (s/> '(1 2 3) (s/take-last 'one)))]
                )
+    'ok))
+
+(mat s/drop ()
+  (match-let* ([(1 2 3) (s/> '(1 2 3) (s/drop 0))]
+               [(3) (s/> '(1 2 3) (s/drop 2))]
+               [() (s/> '(1 2 3) (s/drop 3))]
+               [() (s/> '(1 2 3) (s/drop 4))]
+               [`(catch #(bad-arg s/drop one)) (try (s/> '(1 2 3) (s/drop 'one)))]
+               )
+    'ok))
+
+(mat s/drop-last ()
+  (match-let* ([(1 2 3) (s/> '(1 2 3) (s/drop-last 0))]
+               [(1 2) (s/> '(1 2 3) (s/drop-last 1))]
+               [(1) (s/> '(1 2 3) (s/drop-last 2))]
+               [() (s/> '(1 2 3) (s/drop-last 3))]
+               [() (s/> '(1 2 3) (s/drop-last 4))]
+               [() (s/> '() (s/drop-last 4))]
+               [`(catch #(bad-arg s/drop-last one)) (try (s/> '(1 2 3) (s/drop-last 'one)))]
+               )
+    'ok))
+
+(mat s/sort ()
+  (match-let* ([(1 2 3) (s/> '(3 2 1) (s/sort <))]
+               [(1 2 3) (s/> '() (lambda (_) '(3 2 1)) (s/sort <))]
+               [(1 2 3) (s/> '() (lambda (_) '#(3 2 1)) (s/sort <))]
+               [`(catch #(invalid-stream foo)) (try (s/> '() (lambda (_) 'foo) (s/sort <)))]
+               )
+    'ok))
+
+(mat stream-repeat ()
+  (match-let* ([(0 -1 -2) (stream->list (stream-repeat 3 -))]
+               [`(catch #(bad-arg stream-repeat three)) (try (stream-repeat 'three -))]
+               )
+    'ok))
+
+(mat s/ht ()
+  (match-let* ([,ht (s/> '((a . 1) (b . 2)) (s/ht))]
+               [#t (symbol-hashtable? ht)]
+               [((a . 1) (b . 2)) (s/> ht s/sort-cells)]
+               [((a . 1) (b . 2)) (s/> '((1 . a) (2 . b)) (s/ht cdr car) s/sort-cells)]
+               [#t (string-hashtable? (s/> '() (s/ht car cdr string-hash string=?)))]
+               [`(catch #(duplicate-key "a" 1 2))
+                (try (s/> '(("a" . 1) ("A" . 2))
+                       (s/ht (lambda (x) (string-downcase (car x))) cdr)))])
+    'ok))
+
+(mat s/ht* ()
+  (match-let* ([,ht (s/> '((a . 1) (b . 2) (a . 3)) (s/ht*))]
+               [#t (symbol-hashtable? ht)]
+               [((a 1 3) (b 2)) (s/> ht s/sort-cells)]
+               [((a 1 3) (b 2)) (s/> '((1 . a) (2 . b) (3 . a)) (s/ht* cdr car) s/sort-cells)]
+               [((a 1 3) (b 2))
+                (s/> '((1 . a) (2 . b) (3 . a)) (s/ht* cdr car equal-hash equal?) s/sort-cells)]
+               [#t (string-hashtable? (s/> '() (s/ht* car cdr string-hash string=?)))])
+    'ok))
+
+(mat s/ht** ()
+  (match-let* ([,ht (s/> '((a 1 2) (b 3 4) (a 5 6)) (s/ht**))]
+               [#t (symbol-hashtable? ht)]
+               [((a 1 2 5 6) (b 3 4)) (s/> ht s/sort-cells)]
+               [((a 1 2 5 6) (b 3 4))
+                (s/> '(((1 2) . a) ((3 4) . b) ((5 6) . a)) (s/ht** cdr car) s/sort-cells)]
+               [((a 1 2 5 6) (b 3 4))
+                (s/> '(((1 2) . a) ((3 4) . b) ((5 6) . a))
+                  (s/ht** cdr car equal-hash equal?)
+                  s/sort-cells)]
+               [#t (string-hashtable? (s/> '() (s/ht** car cdr string-hash string=?)))])
+    'ok))
+
+(mat make-hashtable-for-key ()
+  (match-let* ([#t (eq-hashtable? (s/> '((1 . x)) (s/ht)))]
+               [#t (eq-hashtable? (s/> `((,(condition) . x)) (s/ht)))]
+               [#t (eq-hashtable? (s/> '((#t . x)) (s/ht)))]
+               [#t (eqv-hashtable? (s/> '((1.0 . x)) (s/ht)))]
+               [#t (string-hashtable? (s/> '(("1" . x)) (s/ht)))]
+               [#t (symbol-hashtable? (s/> '((a . x)) (s/ht)))]
+               [#t (equal-hashtable? (s/> '(((1) . x)) (s/ht)))]
+               )
+    'ok))
+
+(mat s/json-object ()
+  (match-let* ([,j (s/> '((a . 1) ("b" . 2)) (s/json-object))]
+               [#t (json:object? j)]
+               [((a . 1) (b . 2)) (s/> j s/sort-cells)]
+               [((a . 1) (b . 2)) (s/> '((1 . a) (2 . "b")) (s/json-object cdr car) s/sort-cells)]
+               [`(catch #(duplicate-key a 1 2)) (try (s/> '((a . 1) ("a" . 2)) (s/json-object)))]
+               [`(catch #(invalid-key 1)) (try (s/> '((1 . 2)) (s/json-object)))])
     'ok))
 
 (mat reapply-transformers ()
