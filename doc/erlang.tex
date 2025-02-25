@@ -701,6 +701,17 @@ original port \var{bp} is marked closed so that it cannot be used
 except through the associated textual port.
 
 % ----------------------------------------------------------------------------
+\defineentry{make-directory-path}
+\begin{procedure}
+  \code{(make-directory-path \var{path} \opt{\var{mode}})}
+\end{procedure}
+\returns{} \var{path}
+
+The \code{make-directory-path} procedure creates directories as needed
+for the file \var{path} using \var{mode}, which defaults to
+\code{\#o777}. It returns \var{path}.
+
+% ----------------------------------------------------------------------------
 \defineentry{make-utf8-transcoder}
 \begin{procedure}
   \code{(make-utf8-transcoder)}
