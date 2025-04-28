@@ -446,6 +446,12 @@
      [(op x) (json:write op x #f)]
      [(op x indent) (json:write op x indent no-custom-write)]
      [(op x indent custom-write)
+      (define (finish end-char indent op)
+        (or (json:write-structural-char end-char indent op)
+            ;; Always return a non-false value (either a fixnum indent or void).
+            ;; This ensures that we recognize when `custom-write` has handled the input
+            ;; if it tail-calls `wr` on a list or JSON object.
+            (and custom-write (void))))
       (define (wr op x indent)
         (cond
          [(string? x) (write-string x op)]
@@ -470,7 +476,7 @@
                (json:write-structural-char #\, indent op)
                (wr op x indent))
              (cdr x))
-            (json:write-structural-char #\] indent op))]
+            (finish #\] indent op))]
          [(json:object? x)
           (if (zero? (#3%hashtable-size x))
               (display-string "{}" op)
@@ -487,7 +493,7 @@
                       (write-string (json-key->string (car p)) op)
                       (json:write-structural-char #\: indent op)
                       (wr op (cdr p) indent))))
-                (json:write-structural-char #\} indent op)))]
+                (finish #\} indent op)))]
          [else (throw `#(invalid-datum ,x))]))
       (when (and indent (or (not (fixnum? indent)) (negative? indent)))
         (bad-arg 'json:write indent))

@@ -188,7 +188,7 @@
        (lambda (op v indent wr)
          (if (vector? v)
              (fprintf op "[~{\"~r\"~^,~}]" (vector->list v))
-             (wr op v)))]
+             (wr op v indent)))]
       ["{\"abc\":[\"four\",\"five\",\"six\"],\"def\":[7,8,9],\"ghi\":3}"
        (begin
          (json:write-object op #f json:write
@@ -310,7 +310,7 @@
   (define (custom-write op x indent wr)
     (match x
       [`(<obj> ,a ,b ,c)
-       (json:write-object op #f wr
+       (json:write-object op indent wr
          [_type_ "<obj>"]
          [a a]
          [b b]
@@ -321,6 +321,14 @@
          [_type_ "symbol"]
          [name (symbol->string x)])]
       [,_ #f]))
+  (define (custom-write2 op x indent wr)
+    (or (custom-write op x indent wr)
+        ;; We could make this more efficient by using json:write-structural-char
+        ;; and looping over the vector instead of allocating an intermediate list.
+        ;; We do the latter to exercise the case where `custom-write` tail-calls
+        ;; `wr` on a JSON object and indent is #f.
+        (and (vector? x)
+             (wr op (vector->list x) indent))))
   (define (hashtable->alist ht)
     (sort cell<? (vector->list (hashtable-cells ht))))
   (define (compare x y)
@@ -351,19 +359,45 @@
           [a "quick"]
           [b 'line]
           [c (list
-              (<obj> make [a 1] [b 2] [c 3])
+              (<obj> make [a 1] [b 2] [c '(3 4 5)])
               (json:make-object
-               [able (<obj> make [a 4] [b 5] [c 6])]
+               [able (<obj> make [a 4] [b 'echo] [c 6])]
                [baker '("one" "two")]
                [charlie "delta"])
               (<obj> make
                 [a 'typical]
                 [b 'fore]
                 [c (json:make-object [take "cake"])]))])]
+    ;; use custom-write
+    ;; first without indentation:
     [,string (json:object->string x #f custom-write)]
     [ok (compare x (json:string->object string custom-inflate))]
     [,bv (json:object->bytevector x #f custom-write)]
+    [ok (compare x (json:bytevector->object bv custom-inflate))]
+    ;; now indent:
+    [,string (json:object->string x 0 custom-write)]
+    [ok (compare x (json:string->object string custom-inflate))]
+    [,bv (json:object->bytevector x 0 custom-write)]
     [ok (compare x (json:bytevector->object bv custom-inflate))])
+   'ok)
+  (match-let*
+   ([,x (vector
+         (vector 'one 2 '#("three" D))
+         (<obj> make [a '#(x y z)] [b 4] [c 7]))]
+    ;; now use custom-write2
+    ;; without indentation
+    [,string1 (json:object->string x #f custom-write2)]
+    [,string2 (json:object->string x 0 custom-write2)]
+    [#f (string=? string1 string2)]
+    [,@string1 (pregexp-replace* "\\s" string2 "")]
+    ;; By design, some vectors in the input are lists in the output.
+    [,y (json:string->object string1 custom-inflate)]
+    [,@y (let f ([x x]) ;; rebuild x suitable for comparison with y
+           (match x
+             [`(<obj> ,a ,b ,c)
+              (<obj> make [a (f a)] [b (f b)] [c (f c)])]
+             [,x (guard (vector? x)) (vector->list (vector-map f x))]
+             [,x x]))])
    'ok))
 
 (mat object ()
