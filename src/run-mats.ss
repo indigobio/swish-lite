@@ -20,6 +20,7 @@
             "swish/json.ms"
             "swish/meta.ms"
             "swish/oop.ms"
+            "swish/options.ms"
             "swish/pregexp.ms"
             "swish/queue.ms"
             "swish/stream.ms"
