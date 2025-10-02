@@ -754,6 +754,58 @@ The \code{path-normalize} procedure removes unnecessary directory separators and
 simplifies ``.'' and ``..'' components from \var{path}.
 
 % ----------------------------------------------------------------------------
+\subsection {Queues}
+
+A queue is represented as a pair of lists,
+\code{(\var{in}~.~\var{out})}. The \var{out} list contains the first
+elements of the queue, and the \var{in} list contains the last
+elements of the queue in reverse. This representation allows for O(1)
+amortized insertion and removal times. The implementation is based on
+the Erlang queue module~\cite{queue-ref}.
+
+% ----------------------------------------------------------------------------
+\defineentry{queue:add}
+\begin{procedure}
+  \code{(queue:add \var{x} \var{q})}
+\end{procedure}
+\returns{} a queue that adds \var{x} to the rear of \var{q}
+
+% ----------------------------------------------------------------------------
+\defineentry{queue:add-front}
+\begin{procedure}
+  \code{(queue:add-front \var{x} \var{q})}
+\end{procedure}
+\returns{} a queue that adds \var{x} to the front of \var{q}
+
+% ----------------------------------------------------------------------------
+\defineentry{queue:drop}
+\begin{procedure}
+  \code{(queue:drop \var{q})}
+\end{procedure}
+\returns{} a queue without the first element of \var{q}
+
+% ----------------------------------------------------------------------------
+\defineentry{queue:empty}
+\begin{syntax}
+  \code{queue:empty}
+\end{syntax}
+\returns{} the empty queue
+
+% ----------------------------------------------------------------------------
+\defineentry{queue:empty?}
+\begin{procedure}
+  \code{(queue:empty? \var{q})}
+\end{procedure}
+\returns{} \code{\#t} if \var{q} is \code{queue:empty}, \code{\#f} otherwise
+
+% ----------------------------------------------------------------------------
+\defineentry{queue:get}
+\begin{procedure}
+  \code{(queue:get \var{q})}
+\end{procedure}
+\returns{} the first element of \var{q}
+
+% ----------------------------------------------------------------------------
 \subsection{Error Strings}
 
 % ----------------------------------------------------------------------------

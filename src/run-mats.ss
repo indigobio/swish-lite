@@ -21,6 +21,7 @@
             "swish/meta.ms"
             "swish/oop.ms"
             "swish/pregexp.ms"
+            "swish/queue.ms"
             "swish/stream.ms"
             "swish/string-utils.ms"
             )

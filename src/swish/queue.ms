@@ -1,4 +1,4 @@
-;;; Copyright 2018 Beckman Coulter, Inc.
+;;; Copyright 2017 Beckman Coulter, Inc.
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person
 ;;; obtaining a copy of this software and associated documentation
@@ -20,18 +20,43 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(library (swish imports)
-  (export)
-  (import (chezscheme))
-  (export
-   (import
-    (swish dsm)
-    (swish erlang)
-    (swish errors)
-    (swish html)
-    (swish io)
-    (swish json)
-    (swish meta)
-    (swish pregexp)
-    (swish queue)
-    (swish string-utils))))
+(import
+ (chezscheme)
+ (swish erlang)
+ (swish mat)
+ (swish queue)
+ )
+
+(mat q ()
+  (match-let*
+   ([#t (queue:empty? queue:empty)]
+    [#(EXIT empty) (catch (queue:get queue:empty))]
+    [#(EXIT empty) (catch (queue:drop queue:empty))]
+    [ok (test-adding-and-dropping queue:add #f)]
+    [ok (test-adding-and-dropping queue:add-front #t)])
+   'ok))
+
+(define (test-adding-and-dropping adder reverse?)
+  (define (add-list q ls)
+    (fold-left
+     (lambda (q x) (adder x q))
+     q
+     (if reverse? (reverse ls) ls)))
+  (define (drop-list q ls)
+    (fold-left
+     (lambda (q x)
+       (match-let* ([,@x (queue:get q)])
+         (queue:drop q)))
+     q
+     ls))
+  (match-let*
+   ([,q (add-list queue:empty '(1))]
+    [#f (queue:empty? q)]
+    [,q (drop-list q '(1))]
+    [#t (queue:empty? q)]
+    [,q (add-list q '(1 2 3 4 5 6))]
+    [1 (queue:get q)]
+    [1 (queue:get q)]
+    [,q (drop-list q '(1 2 3 4 5 6))]
+    [#t (queue:empty? q)])
+   'ok))
