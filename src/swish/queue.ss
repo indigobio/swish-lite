@@ -20,19 +20,51 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(library (swish imports)
-  (export)
-  (import (chezscheme))
+(library (swish queue)
   (export
-   (import
-    (swish dsm)
-    (swish erlang)
-    (swish errors)
-    (swish html)
-    (swish io)
-    (swish json)
-    (swish meta)
-    (swish options)
-    (swish pregexp)
-    (swish queue)
-    (swish string-utils))))
+   queue:add
+   queue:add-front
+   queue:drop
+   queue:empty
+   queue:empty?
+   queue:get
+   )
+  (import
+   (chezscheme)
+   (swish erlang)
+   )
+
+  (define queue:empty '(() . ()))
+
+  (define (queue:empty? q) (eq? q queue:empty))
+
+  (define (queue:add x q)
+    (match q
+      [(,(in <= (,_)) . ()) `((,x) . ,in)]
+      [(,in . ,out) `((,x . ,in) . ,out)]))
+
+  (define (queue:add-front x q)
+    (match q
+      [(() . ,(out <= (,_))) `(,out . (,x))]
+      [(,in . ,out) `(,in . (,x . ,out))]))
+
+  (define (queue:get q)
+    (when (queue:empty? q) (throw 'empty))
+    (match q
+      [(,_ . (,h . ,_)) h]
+      [((,h) . ()) h]))
+
+  (define (queue:drop q)
+    (when (queue:empty? q) (throw 'empty))
+    (match q
+      [((,_) . ()) (profile-me) queue:empty]
+      [(,r . (,_)) (profile-me) (r2f r)]
+      [(,r . (,_ . ,f)) `(,r . ,f)]))
+
+  (define (r2f ls)
+    (match ls
+      [() (profile-me) queue:empty]
+      [,(r <= (,_)) `(() . ,r)]
+      [(,x ,y) `((,x) . (,y))]
+      [(,x ,y . ,r) `((,x ,y) . ,(reverse r))]))
+  )

@@ -17,6 +17,7 @@ swish :=\
   pregexp.tex\
   heap.tex\
   oop.tex\
+  options.tex\
   stream.tex\
   cli.tex\
   testing.tex\
