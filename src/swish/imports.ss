@@ -32,6 +32,7 @@
     (swish io)
     (swish json)
     (swish meta)
+    (swish options)
     (swish pregexp)
     (swish queue)
     (swish string-utils))))
