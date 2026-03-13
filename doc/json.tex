@@ -35,32 +35,47 @@
 
 \section {Introduction}
 
-The programming interface includes procedures for JavaScript Object Notation
-(JSON)~\cite{RFC7159}. In order to support all floating-point values, it extends the
-specification with Infinity, -Infinity, and NaN.
+The programming interface provides support for JavaScript Object
+Notation (JSON)~\cite{RFC7159}.
 
-This implementation translates JavaScript types into the following
-Scheme types:
+This implementation defines a mapping between JSON values and Scheme
+values as follows:
 
+\begin{center}
 \begin{tabular}{ll}
-  JavaScript & Scheme \\ \hline
+  JSON & Scheme \\ \hline
 
-  \code{true} & \code{\#t} \\
+  \code{true}  & \code{\#t} \\
   \code{false} & \code{\#f} \\
-  \code{null} & symbol \code{null} \\
-  \code{Infinity} & \code{+inf.0} \\
-  \code{-Infinity} & \code{-inf.0} \\
-  \code{NaN} & \code{+nan.0} \\
-  \var{string} & \var{string} \\
-  \var{number} & \var{number} \\
-  \var{array} & \var{list} \\
-  \var{object} & hashtable mapping symbols to values \\
+  \code{null}  & symbol \code{null} \\
+  string       & string \\
+  number       & number \\
+  array        & list \\
+  object       & hashtable mapping symbols to values \\
 
   \hline
 \end{tabular}
+\end{center}
 
-This implementation does not range check values to ensure that a
-JavaScript implementation can interpret the data.
+JSON objects are represented as hashtables whose keys are symbols
+derived from the corresponding JSON object member names.
+
+No validation is performed to ensure that numeric values fall within
+the range supported by typical JavaScript implementations. As a result,
+some values produced by this implementation may not be portable to all
+JSON consumers.
+
+By default, this implementation accepts input conforming to
+JSON5~\cite{JSON5}, a superset of JSON. This allows additional syntax
+not permitted by standard JSON, including comments, single-quoted
+strings, and numeric values such as \code{Infinity}, \code{-Infinity},
+and \code{NaN}.
+
+Output is, by default, written in standard JSON format. However, the
+implementation permits the non-standard numeric values
+\code{Infinity}, \code{-Infinity}, and \code{NaN} to be written as
+well. This behavior is controlled by an option that is enabled by
+default.
 
 \section {Programming Interface}
 
@@ -197,35 +212,75 @@ still mutate hashtables along the valid portion of the path
 before reporting an error.
 
 \defineentry{json:read}
+\defineentry{json:read-options}
+\phantomsection % make pageref go to correct page for this label
+\label{json:read-options}
 \begin{procedure}
-  \code{(json:read \var{ip} \opt{\var{custom-inflate}})}
+  \code{(json:read \var{ip} \opt{\var{options}})}
 \end{procedure}
 \returns{} a Scheme object or the eof object
 
-The \code{json:read} procedure reads characters from the textual
-input port \var{ip} and returns an appropriate Scheme object.
-When \code{json:read} encounters a JSON object, it builds
-the corresponding hashtable and calls \var{custom-inflate}
-to perform application-specific conversion.
-By default, \var{custom-inflate} is the identity function.
+The \code{json:read} procedure reads characters from the textual input
+port \var{ip} and returns an appropriate Scheme object. If no more
+input is available, the end-of-file object is returned.
+
+The optional \var{options} argument is constructed using
+\code{(json:read-options (\var{option} \var{value}) \dots)}. The
+following options are supported:
+
+\begin{tabular}{lrp{.5\textwidth}}
+  option & default & description \\ \hline
+
+  \code{extended-identifiers?} & \code{\#f} &
+  If true, enables more permissive reading of unquoted symbols. In
+  value position, this applies to both JSON and JSON5 input. If
+  \code{json5?} is enabled, it also applies to object member
+  names. When enabled, unquoted symbols may include characters not
+  permitted by the JSON5 identifier syntax (for example, hyphenated
+  identifiers in the style of Scheme). If false, unquoted symbols must
+  conform to the JSON5 identifier syntax. \\
+
+  \code{inflate-object} & \code{\#f} &
+  When a JSON object is read, it is first converted into a hashtable.
+  If \code{inflate-object} is provided, it is then applied to the
+  hashtable to perform application-specific transformation. By
+  default, no transformation is performed. \\
+
+  \code{inflate-symbol} & \code{\#f} &
+  Specifies a procedure of one argument for interpreting unquoted
+  symbols in value position. The procedure is called with the symbol
+  as its argument and may return any Scheme object. If
+  \code{inflate-symbol} is \code{\#f}, the occurrence of an unquoted
+  symbol in value position is an error. This behavior does not apply
+  to object member names. \\
+
+  \code{json5?} & \code{\#t} & If \code{\#t}, input is parsed according
+  to JSON5. If \code{\#f}, only standard JSON syntax is accepted.
+
+\end{tabular}
 
 The following exceptions may be raised:
 \begin{itemize}
 \item \code{invalid-surrogate-pair}
-\item \code{unexpected-eof}
-\item \code{\#(unexpected-input \var{data} \var{input-position})}
+\item \code{\#(json:unexpected-input \var{context} \var{data} \var{input-position} \var{name})}
 \end{itemize}
 
 \defineentry{json:write}
+\defineentry{json:write-options}
+\phantomsection % make pageref go to correct page for this label
+\label{json:write-options}
 \begin{procedure}
-  \code{(json:write \var{op} \var{x} \opt{\var{indent}} \opt{\var{custom-write}})}
+  \code{(json:write \var{op} \var{x} \opt{\var{indent}} \opt{\var{options}})}
 \end{procedure}
 \returns{} unspecified
 
 The \code{json:write} procedure writes the object \var{x} to the
-textual output port \var{op} in JSON format. JSON objects are sorted
-by key using \code{string<?} on the string values of the symbols to
-provide stable output. Scheme fixnums, bignums, and finite flonums may
+textual output port \var{op} in JSON format. By default, \code{json:write}
+sorts the keys of JSON objects using \code{string<?}, after converting
+the symbolic keys to strings.
+This sort order provides stable output.
+The \code{json:key<?} parameter may be used to alter or disable key sorting.
+Scheme fixnums, bignums, and finite flonums may
 be used as numbers.
 
 When \var{indent} is a non-negative fixnum, the output is more
@@ -234,19 +289,48 @@ individual lines by the specified number of spaces. When \var{indent}
 is 0, a newline is added to the end of the output. The default indent
 of \code{\#f} produces compact output.
 
-The optional \var{custom-write} procedure may intervene to handle
-lists and hashtables differently or to handle objects that have no
-direct JSON counterpart.  If \var{custom-write} does not handle a
-given object, it should return false to let \code{json:write} proceed
-normally.  The \var{custom-write} procedure is called with four
-arguments: the textual output port \var{op}, the Scheme object
-\var{x}, the current \var{indent} level, and a writer procedure
-\var{wr} that should be used to write the values of arbitrary Scheme
-objects.  The \var{wr} procedure is equivalent to
-\code{(lambda (\var{op} \var{x} \var{indent}) (json:write \var{op} \var{x} \var{indent} \var{custom-write}))}.
+The \var{options} are defined with \code{(json:write-options
+  (\var{option} \var{value}) \etc)}. The following options may be
+used:
 
-If an object cannot be formatted, \code{\#(invalid-datum \var{x})}
-is raised.
+\begin{tabular}{lrp{.5\textwidth}}
+  option & default & description \\ \hline
+
+  \code{custom-write} & \code{\#f} & The \var{custom-write} procedure
+  is invoked for any Scheme object that does not have a direct JSON
+  representation (i.e., objects other than booleans, the symbol
+  \code{null}, strings, and numbers). It may intervene to handle lists
+  and hashtables differently or to handle objects that have no direct
+  JSON counterpart.
+
+  If \var{custom-write} does not handle a given object, it should
+  return \code{\#f} to allow \code{json:write} to proceed with its
+  default behavior.
+
+  The \var{custom-write} procedure is called with four arguments: the
+  textual output port \var{op}, the Scheme object \var{x}, the current
+  \var{indent} level, and a writer procedure \var{wr} that should be
+  used to write arbitrary Scheme objects. The \var{wr} procedure is
+  equivalent to
+  \code{(lambda (\var{op} \var{x} \var{indent})
+    (json:write \var{op} \var{x} \var{indent} (json:write-options
+      [custom-write \var{custom-write}])))}.
+
+  The default value of \var{custom-write} is \code{\#f}, which
+  indicates that the \code{json:custom-write} process parameter is
+  used. \\
+
+  \code{json5?} & \code{\#t} &
+  If true, enables writing of the non-standard numeric values
+  \code{Infinity}, \code{-Infinity}, and \code{NaN}. If false, output
+  is restricted to standard JSON to maximize compatibility with other
+  systems, and an exception is raised if any of these values are
+  encountered.
+
+\end{tabular}
+
+If an object cannot be formatted, \code{\#(json:invalid-datum \var{x})}
+is raised. The code does not check for cyclic data.
 
 \defineentry{json:write-object}
 \begin{syntax}
@@ -257,13 +341,16 @@ is raised.
 Given a textual output port \var{op}, an \var{indent} level, and a
 writer procedure \var{wr}, the \code{json:write-object} construct
 writes a JSON object with the given \var{key} / \var{value} pairs to
-\var{op}, sorted by key using \code{string<?} on the string values of
-the symbols.  Each \var{key} must be a distinct symbol.  The \var{wr}
+\var{op}. By default, \code{json:write-object} sorts the keys using
+\code{string<?} on the string values of the symbols.
+To alter or disable key sorting, see the \code{json:key<?} parameter.
+
+Each \var{key} must be a distinct symbol.  The \var{wr}
 procedure takes \var{op}, an object \var{x}, and an \var{indent} level
 just like the \var{wr} procedure that is passed to \code{json:write}'s
 \var{custom-write} procedure.
 
-The following are equivalent, provided the keys are symbols.
+The following are equivalent, provided the keys are symbols and \code{json:key<?} has its default value.
 
 \antipar\begin{alltt}
 (begin (json:write \var{op} (json:make-object [\var{key} \var{value}] \etc) \var{indent}) \#t)
@@ -273,48 +360,114 @@ The latter trades code size and compile time for run-time efficiency.
 At compile time, \code{json:write-object} sorts the keys and
 preformats the strings that will separate values.
 
+\defineentry{json:pretty}
+\begin{procedure}
+  \code{(json:pretty \var{x} \opt{\var{op}} \opt{\var{options}})}
+\end{procedure}
+\returns{} unspecified
+
+The \code{json:pretty} procedure formats an object \var{x} to the
+optional textual output port \var{op} in a human-readable form. The
+object is indented and keys are sorted using
+\code{natural-string-ci<?}. The default value of \var{op} is
+\code{(current-output-port)}.
+
+The optional \var{options} argument is defined using
+\code{json:write-options} described in
+Section~\ref{json:write-options}.
+
+Calling \code{(json:pretty x)} is roughly equivalent to the following:
+\antipar\codebegin
+(parameterize ([json:key<? natural-string-ci<?])
+  (json:write (current-output-port) x 0))
+\codeend
+
+\defineentry{json:custom-write}
+\begin{parameter}
+  \code{json:custom-write}
+\end{parameter}
+\returns{} a procedure or \code{\#f}
+
+The \code{json:custom-write} process-parameter determines the default
+\var{custom-write} argument for \code{json:write} and the other JSON
+output procedures.
+
+\defineentry{json:key<?}
+\begin{parameter}
+  \code{json:key<?}
+\end{parameter}
+\returns{} a boolean or a predicate for comparing two strings
+
+The \code{json:key<?} parameter determines whether and how
+\code{json:pretty}, \code{json:write}, and \code{json:write-object} sort keys
+when writing JSON objects.
+If set to \code{\#f}, keys are not sorted and the output order is arbitrary.
+Otherwise, the output is sorted by obtaining a string for each key
+via \code{symbol->string} and comparing those strings using the predicate
+specified by \code{json:key<?}.
+If \code{json:key<?} is set to \code{\#t}, which is the default,
+then \code{json:pretty} sorts with \code{natural-string-ci<?}
+while \code{json:write} and \code{json:write-object} sort with
+\code{string<?}.
+To affect the output of \code{json:write-object}, \code{json:key<?} must
+be set to the desired value at expand time.
+
 \defineentry{json:object->bytevector}
 \begin{procedure}
-  \code{(json:object->bytevector \var{x} \opt{\var{indent}} \opt{\var{custom-write}})}
+  \code{(json:object->bytevector \var{x} \opt{\var{indent}} \opt{\var{options}})}
 \end{procedure}
 \returns{} a bytevector
 
 The \code{json:object->bytevector} procedure calls \code{json:write}
-on \var{x} with the optional \var{indent} and \var{custom-write}, if
+on \var{x} with the optional \var{indent} and \var{options}, if
 any, using a bytevector output port transcoded using
 \code{(make-utf8-transcoder)} and returns the resulting bytevector.
 
+The optional \var{options} argument is defined using
+\code{json:write-options} described in
+Section~\ref{json:write-options}.
+
 \defineentry{json:bytevector->object}
 \begin{procedure}
-  \code{(json:bytevector->object \var{x} \opt{\var{custom-inflate}})}
+  \code{(json:bytevector->object \var{x} \opt{\var{options}})}
 \end{procedure}
 \returns{} a Scheme object
 
 The \code{json:bytevector->object} procedure creates a bytevector input port
-on \var{x}, calls \code{json:read} with the optional \var{custom-inflate},
+on \var{x}, calls \code{json:read} with the optional \var{options},
 if any, and returns the resulting Scheme object after making sure the rest
 of the bytevector is only whitespace.
 
+The optional \var{options} argument is defined using
+\code{json:read-options} described in Section~\ref{json:read-options}.
+
 \defineentry{json:object->string}
 \begin{procedure}
-  \code{(json:object->string \var{x} \opt{\var{indent}} \opt{\var{custom-write}})}
+  \code{(json:object->string \var{x} \opt{\var{indent}} \opt{\var{options}})}
 \end{procedure}
 \returns{} a JSON formatted string
 
 The \code{json:object->string} procedure creates a string output port,
 calls \code{json:write} on \var{x} with the optional \var{indent} and
-\var{custom-write}, if any, and returns the resulting string.
+\var{options}, if any, and returns the resulting string.
+
+The optional \var{options} argument is defined using
+\code{json:write-options} described in
+Section~\ref{json:write-options}.
 
 \defineentry{json:string->object}
 \begin{procedure}
-  \code{(json:string->object \var{x} \opt{\var{custom-inflate}})}
+  \code{(json:string->object \var{x} \opt{\var{options}})}
 \end{procedure}
 \returns{} a Scheme object
 
 The \code{json:string->object} procedure creates a string input port
-on \var{x}, calls \code{json:read} with the optional \var{custom-inflate},
+on \var{x}, calls \code{json:read} with the optional \var{options},
 if any, and returns the resulting Scheme object after making sure the rest
 of the string is only whitespace.
+
+The optional \var{options} argument is defined using
+\code{json:read-options} described in Section~\ref{json:read-options}.
 
 \defineentry{json:write-structural-char}
 \begin{procedure}
@@ -326,9 +479,6 @@ The \code{json:write-structural-char} procedure writes the character
 \var{x} at an appropriate \var{indent} level to the textual output
 port \var{op}. The character should be one of the following JSON
 structural characters: \code{[ ] \{ \} : ,}
-
-This procedure is intended for use within custom writers passed in to
-\code{json:write} and, for performance, it does not check its input arguments.
 
 \defineentry{stack->json}
 \begin{procedure}
@@ -381,9 +531,9 @@ containing the following keys:
 \end{procedure}
 \returns{} see below
 
-The two argument form of \code{json-stack->string} prints the
+The two-argument form of \code{json-stack->string} prints the
 stack represented by JSON object \var{x} to the textual output port \var{op}.
-The single argument form of \code{json-stack->string} prints the stack
+The single-argument form of \code{json-stack->string} prints the stack
 represented by JSON object \var{x} to a string output port and returns
 the resulting string.
 In either case, the printed form resembles that generated by \code{dump-stack}
