@@ -45,8 +45,14 @@
       [#(bad-arg ,who ,arg) (format "Invalid argument to ~a: ~s." who arg)]
       [#(bad-match ,v ,src) (format "Pattern match failed~a: ~s." (src->english src) v)]
       [#(bad-tuple ,name ,x ,src) (format "Invalid type for tuple ~a~a: ~s." name (src->english src) x)]
-      [#(invalid-datum ,x) (format "Invalid datum: ~s." x)]
-      [#(unexpected-input ,x ,position) (format "Unexpected input at position ~d: ~s." position x)]
+      [#(json:invalid-datum ,what) (format "Invalid datum while writing JSON: ~s." what)]
+      [#(json:unexpected ,context ,what ,position ,name)
+       (let ([eof? (eof-object? what)])
+         (format "Unexpected ~:[input~;end-of-file~]~a~@[ while parsing a JSON ~a~]~@[: ~s~]."
+           eof?
+           (file-offset->english name position)
+           context
+           (and (not eof?) what)))]
       [invalid-surrogate-pair "Invalid Unicode surrogate pair"]
       [unexpected-eof "Unexpected end-of-file."]
       [`(&fault-condition ,reason) (exit-reason->english reason)]
@@ -64,6 +70,13 @@
 
   (define current-exit-reason->english
     (make-parameter swish-exit-reason->english))
+
+  (define (file-offset->english file offset)
+    (cond
+     [(and file offset) (format " at offset ~a of ~a" offset file)]
+     [offset (format " at offset ~a" offset)]
+     [file (format " in ~a" file)]
+     [else ""]))
 
   (define (src->english x)
     (match x
