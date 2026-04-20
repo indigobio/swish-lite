@@ -26,6 +26,14 @@
    binary->utf8
    make-directory-path
    make-utf8-transcoder
+   open-binary-file-to-append
+   open-binary-file-to-read
+   open-binary-file-to-replace
+   open-binary-file-to-write
+   open-file-to-append
+   open-file-to-read
+   open-file-to-replace
+   open-file-to-write
    path-absolute
    path-combine
    path-normalize
@@ -95,4 +103,48 @@
                         (cons ".." rparts)
                         (cdr rparts))))]
              [else (lp (path-rest tail) (cons first rparts))])))))
+
+  (define (open-file-to-read name)
+    (open-file-input-port name
+      (file-options)
+      (buffer-mode block)
+      (make-utf8-transcoder)))
+
+  (define (open-binary-file-to-read name)
+    (open-file-input-port name
+      (file-options)
+      (buffer-mode block)))
+
+  (define (open-file-to-write name)
+    (open-file-output-port name
+      (file-options)
+      (buffer-mode block)
+      (make-utf8-transcoder)))
+
+  (define (open-binary-file-to-write name)
+    (open-file-output-port name
+      (file-options)
+      (buffer-mode block)))
+
+  (define (open-file-to-append name)
+    (open-file-output-port name
+      (file-options append)
+      (buffer-mode block)
+      (make-utf8-transcoder)))
+
+  (define (open-binary-file-to-append name)
+    (open-file-output-port name
+      (file-options append)
+      (buffer-mode block)))
+
+  (define (open-file-to-replace name)
+    (open-file-output-port name
+      (file-options no-fail)
+      (buffer-mode block)
+      (make-utf8-transcoder)))
+
+  (define (open-binary-file-to-replace name)
+    (open-file-output-port name
+      (file-options no-fail)
+      (buffer-mode block)))
   )

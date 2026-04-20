@@ -739,6 +739,106 @@ with end-of-line style \code{none} and error-handling mode
 \code{replace}.
 
 % ----------------------------------------------------------------------------
+\defineentry{open-binary-file-to-append}
+\begin{procedure}
+  \code{(open-binary-file-to-append \var{name})}
+\end{procedure}
+\returns{} a binary file output port
+
+The \code{open-binary-file-to-append} procedure calls\\
+\code{(open-file-output-port \var{name} (file-options append) (buffer-mode block))}.
+
+% ----------------------------------------------------------------------------
+\defineentry{open-binary-file-to-read}
+\begin{procedure}
+  \code{(open-binary-file-to-read \var{name})}
+\end{procedure}
+\returns{} a binary file input port
+
+The \code{open-binary-file-to-read} procedure calls\\
+\code{(open-file-input-port \var{name} (file-options) (buffer-mode block))}.
+
+% ----------------------------------------------------------------------------
+\defineentry{open-binary-file-to-replace}
+\begin{procedure}
+  \code{(open-binary-file-to-replace \var{name})}
+\end{procedure}
+\returns{} a binary file output port
+
+The \code{open-binary-file-to-replace} procedure calls\\
+\code{(open-file-output-port \var{name} (file-options no-fail) (buffer-mode block))}.
+
+% ----------------------------------------------------------------------------
+\defineentry{open-binary-file-to-write}
+\begin{procedure}
+  \code{(open-binary-file-to-write \var{name})}
+\end{procedure}
+\returns{} a binary file output port
+
+The \code{open-binary-file-to-write} procedure calls\\
+\code{(open-file-output-port \var{name} (file-options) (buffer-mode block))}.
+
+% ----------------------------------------------------------------------------
+\defineentry{open-file-to-append}
+\begin{procedure}
+  \code{(open-file-to-append \var{name})}
+\end{procedure}
+\returns{} a textual file output port
+
+The \code{open-file-to-append} procedure calls
+\codebegin
+(open-file-output-port \var{name}
+  (file-options append)
+  (buffer-mode block)
+  (make-utf8-transcoder))
+\codeend
+
+% ----------------------------------------------------------------------------
+\defineentry{open-file-to-read}
+\begin{procedure}
+  \code{(open-file-to-read \var{name})}
+\end{procedure}
+\returns{} a textual file input port
+
+The \code{open-file-to-read} procedure calls
+\codebegin
+(open-file-input-port \var{name}
+  (file-options)
+  (buffer-mode block)
+  (make-utf8-transcoder))
+\codeend
+
+% ----------------------------------------------------------------------------
+\defineentry{open-file-to-replace}
+\begin{procedure}
+  \code{(open-file-to-replace \var{name})}
+\end{procedure}
+\returns{} a textual file output port
+
+The \code{open-file-to-replace} procedure calls
+\codebegin
+(open-file-output-port \var{name}
+  (file-options no-fail)
+  (buffer-mode block)
+  (make-utf8-transcoder))
+\codeend
+
+% ----------------------------------------------------------------------------
+\defineentry{open-file-to-write}
+\begin{procedure}
+  \code{(open-file-to-write \var{name})}
+\end{procedure}
+\returns{} a textual file output port
+
+The \code{open-file-to-write} procedure calls
+\codebegin
+(open-file-output-port \var{name}
+  (file-options)
+  (buffer-mode block)
+  (make-utf8-transcoder))
+\codeend
+
+% ----------------------------------------------------------------------------
 \defineentry{path-absolute}
 \begin{procedure}
   \code{(path-absolute \var{path} \opt{\var{base}})}
