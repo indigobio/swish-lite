@@ -128,13 +128,13 @@
 
   (define (open-file-to-append name)
     (open-file-output-port name
-      (file-options append)
+      (file-options append no-fail no-truncate)
       (buffer-mode block)
       (make-utf8-transcoder)))
 
   (define (open-binary-file-to-append name)
     (open-file-output-port name
-      (file-options append)
+      (file-options append no-fail no-truncate)
       (buffer-mode block)))
 
   (define (open-file-to-replace name)

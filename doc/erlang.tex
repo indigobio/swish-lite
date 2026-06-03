@@ -745,8 +745,12 @@ with end-of-line style \code{none} and error-handling mode
 \end{procedure}
 \returns{} a binary file output port
 
-The \code{open-binary-file-to-append} procedure calls\\
-\code{(open-file-output-port \var{name} (file-options append) (buffer-mode block))}.
+The \code{open-binary-file-to-append} procedure calls
+\codebegin
+(open-file-output-port \var{name}
+  (file-options append no-fail no-truncate)
+  (buffer-mode block))
+\codeend
 
 % ----------------------------------------------------------------------------
 \defineentry{open-binary-file-to-read}
@@ -788,7 +792,7 @@ The \code{open-binary-file-to-write} procedure calls\\
 The \code{open-file-to-append} procedure calls
 \codebegin
 (open-file-output-port \var{name}
-  (file-options append)
+  (file-options append no-fail no-truncate)
   (buffer-mode block)
   (make-utf8-transcoder))
 \codeend
