@@ -46,6 +46,7 @@
       [#(bad-match ,v ,src) (format "Pattern match failed~a: ~s." (src->english src) v)]
       [#(bad-tuple ,name ,x ,src) (format "Invalid type for tuple ~a~a: ~s." name (src->english src) x)]
       [#(json:invalid-datum ,what) (format "Invalid datum while writing JSON: ~s." what)]
+      [#(json:invalid-key ,what ,src) (format "Invalid key~a: ~s" (src->english src) what)]
       [#(json:unexpected ,context ,what ,position ,name)
        (let ([eof? (eof-object? what)])
          (format "Unexpected ~:[input~;end-of-file~]~a~@[ while parsing a JSON ~a~]~@[: ~s~]."
