@@ -46,8 +46,8 @@
         [,v (guard (eq? v (void))) (void)]
         [,s (guard (string? s)) (html:encode op s)]
         [,n (guard (number? n))
-          (parameterize ([print-precision #f] [print-subnormal-precision #f])
-            (fprintf op "~d" n))]
+          (parameterize ([print-radix 10] [print-precision #f] [print-subnormal-precision #f])
+            (fprintf op "~a" n))]
         [(begin . ,patterns)
          (guard (list? patterns))
          (write-patterns patterns op)]
@@ -152,8 +152,8 @@
          (write-char #\" op)
          (if (string? value)
              (html:encode op value)
-             (parameterize ([print-precision #f] [print-subnormal-precision #f])
-               (fprintf op "~d" value)))
+             (parameterize ([print-radix 10] [print-precision #f] [print-subnormal-precision #f])
+               (fprintf op "~a" value)))
          (write-char #\" op)]
         [,_ (bad-arg 'html->string x)])
       (write-attrs (cdr attrs) op x)))
