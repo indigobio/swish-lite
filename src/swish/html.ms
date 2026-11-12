@@ -38,7 +38,6 @@
     ["&lt;this&gt;=&quot;fun &amp; games&quot;"
      (html->string "<this>=\"fun & games\"")]
     ["12" (html->string 12)]
-    ["1e-315" (html->string 1e-315)]
     ["" (html->string '(begin))]
     ["this" (html->string '(begin "this"))]
     ["this=1, that=-1"
@@ -58,7 +57,6 @@
     ["<img>" (html->string `(img (@ ,(void))))]
     ["<img hidden display=\"false\" height=\"100\">"
      (html->string `(img (@ (hidden) (display "false") (height 100))))]
-    ["<img f=\"1e-315\">" (html->string `(img (@ (f 1e-315))))]
     ["<html></html>" (html->string '(html))]
     ["<!DOCTYPE html><html lang=\"en\"></html>" (html->string '(html5))]
     ["<!DOCTYPE html><html lang=\"fr\"></html>" (html->string '(html5 (@ (lang "fr"))))]
@@ -70,7 +68,7 @@
     ["<this>" (html->string '(raw "<this>"))]
     ["<this>=\"fun & games\""
      (html->string '(raw "<this>" "=" "\"fun & games\""))]
-    [,s1 "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Example</title></head><body style=\"font-family:monospace;\"><p>Plain<br>text</p><p>&quot;Text in quotes&quot; &amp; &lt;taglike&gt;</p><p>Ten: 10</p><p>Three halves: 3/2</p><p>One point five: 1.5</p><p>Denormal: 1e-315</p></body></html>"]
+    [,s1 "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Example</title></head><body style=\"font-family:monospace;\"><p>Plain<br>text</p><p>&quot;Text in quotes&quot; &amp; &lt;taglike&gt;</p><p>Ten: 10</p><p>Three halves: 3/2</p><p>One point five: 1.5</p></body></html>"]
     [,exp1 `(html5
              (head
               (meta (@ (charset "UTF-8")))
@@ -81,8 +79,7 @@
                (begin
                  (p "Ten: " 10)
                  (p "Three halves: " 3/2)
-                 (p "One point five: " 1.5)
-                 (p "Denormal: " 1e-315))))]
+                 (p "One point five: " 1.5))))]
     [,@s1 (html->string exp1)]
     [,bv1 (string->utf8 s1)]
     [,@bv1 (html->bytevector exp1)]
@@ -156,3 +153,9 @@
       ["<p f=\"-10.0\">10.0</p>" (html->string '(p (@ (f -10.0)) 10.0))]
       ["<p f=\"-1e-315\">1e-315</p>" (html->string '(p (@ (f -1e-315)) 1e-315))])
      'ok)))
+
+(mat denormal ()
+  (match-let*
+   (["1e-315" (html->string 1e-315)]
+    ["<img f=\"1e-315\">" (html->string `(img (@ (f 1e-315))))])
+   'ok))
